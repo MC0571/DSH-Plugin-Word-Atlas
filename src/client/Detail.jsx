@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { loadEntry, hasMedia, audioUrl, MEDIA } from './data.js'
 import { LookupText } from './LookupText.jsx'
-import { shareWordCard } from './share.js'
 import { formatInterval, isDue } from './fsrs.js'
 import {
   AudioButton,
@@ -101,26 +100,18 @@ export function DetailModal({
               {topicLabel ? <span className="wa-chip">{topicLabel}</span> : null}
               {card ? <span className={`wa-chip wa-chip-status ${card.st === 2 ? 'is-done' : ''}`}>{card.st === 2 ? '复习中' : '学习中'}</span> : null}
             </div>
-            <button
-              type="button"
-              className={`wa-icon-btn ${saved ? 'is-on' : ''}`}
-              onClick={() => onToggleBookmark(word.id)}
-              aria-pressed={saved}
-              aria-label={saved ? '取消收藏' : '收藏'}
-              title={saved ? '取消收藏' : '收藏'}
-            >
-              <Icon name="heart" size={19} filled={saved} />
-            </button>
-            <button
-              type="button"
-              className="wa-icon-btn"
-              onClick={() => entry && shareWordCard({ entry, word, accent })}
-              disabled={!entry}
-              aria-label="生成分享卡"
-              title="生成分享卡"
-            >
-              <Icon name="share" size={19} />
-            </button>
+            <div className="wa-detail-head-actions">
+              <button
+                type="button"
+                className={`wa-icon-btn ${saved ? 'is-on' : ''}`}
+                onClick={() => onToggleBookmark(word.id)}
+                aria-pressed={saved}
+                aria-label={saved ? '取消收藏' : '收藏'}
+                title={saved ? '取消收藏' : '收藏'}
+              >
+                <Icon name="heart" size={19} filled={saved} />
+              </button>
+            </div>
           </header>
 
           <h2 id="wa-detail-title" className="wa-headword" lang="en">
