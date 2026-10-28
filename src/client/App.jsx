@@ -2,9 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { loadAtlas } from './data.js'
 import { bumpDay, hydrate, streak, toggleBookmark as toggleBookmarkState, update, useProgress } from './store.js'
 import { Rating, review } from './fsrs.js'
+import { buildSession, newToday } from './session.js'
 import { DetailModal } from './Detail.jsx'
 import { WordGrid } from './Browse.jsx'
 import { ReviewView } from './Review.jsx'
+import { Today } from './Today.jsx'
+import { Learn } from './Learn.jsx'
 import { Settings } from './Settings.jsx'
 import { Icon, Spinner, EmptyState } from './ui.jsx'
 
@@ -32,6 +35,7 @@ function BrandMark() {
 }
 
 const TABS = [
+  { id: 'today', label: '今日', icon: 'star' },
   { id: 'atlas', label: '图鉴', icon: 'book' },
   { id: 'review', label: '复习', icon: 'refresh' },
   { id: 'bookmarks', label: '生词本', icon: 'heart' },
@@ -41,7 +45,7 @@ const TABS = [
 export function App() {
   const [atlas, setAtlas] = useState(null)
   const [error, setError] = useState('')
-  const [view, setView] = useState('atlas')
+  const [view, setView] = useState('today')
   const [search, setSearch] = useState('')
   const [cefr, setCefr] = useState('all')
   const [topic, setTopic] = useState('all')
@@ -121,7 +125,55 @@ export function App() {
       ...state,
       settings: { ...state.settings, accent: state.settings.accent === 'uk' ? 'us' : 'uk' },
     }))
-  const goAtlas = () => setView('atlas')
+
+  const startLearn = (options = {}) => {
+    if (!atlas) return
+    const hasActive = progress.session && !progress.session.finished
+    if (hasActive && !options.ids && !options.reviewOnly && !options.extra) {
+      setView('learn')
+      return
+    }
+    const settings = options.extra
+      ? { ...progress.settings, dailyNew: newToday(progress) + options.extra }
+      : progress.settings
+    const session = buildSession(atlas, progress, settings, options)
+    if (session.steps.length === 0) return
+    update((state) => ({ ...state, session }))
+    setView('learn')
+  }
+
+  const detailModal = detailWord && atlas ? (
+    <DetailModal
+      atlas={atlas}
+      word={detailWord}
+      progress={progress}
+      onClose={() => setDetailStack([])}
+      onOpenWord={pushWord}
+      onBack={detailStack.length > 1 ? closeDetail : undefined}
+      backLabel={detailBackWord?.word}
+      onPrev={() => {
+        if (detailIndex > 0) setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex - 1].id])
+      }}
+      onNext={() => {
+        if (detailIndex >= 0 && detailIndex < activeList.length - 1) {
+          setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex + 1].id])
+        }
+      }}
+      hasPrev={detailIndex > 0}
+      hasNext={detailIndex >= 0 && detailIndex < activeList.length - 1}
+      onToggleBookmark={toggleBookmark}
+      onMarkLearned={markLearned}
+    />
+  ) : null
+
+  if (view === 'learn' && atlas) {
+    return (
+      <div className="wa-root wa-root-focus">
+        <Learn atlas={atlas} progress={progress} onExit={() => setView('today')} onRestart={startLearn} onOpenWord={pushWord} />
+        {detailModal}
+      </div>
+    )
+  }
 
   return (
     <div className="wa-root">
@@ -198,15 +250,26 @@ export function App() {
           <div className="wa-boot">
             <Spinner label="正在加载词光词库…" />
           </div>
+        ) : view === 'today' ? (
+          <Today
+            atlas={atlas}
+            progress={progress}
+            onStart={startLearn}
+            onOpenWord={pushWord}
+            onOpenLevel={(level) => {
+              setCefr(level)
+              setView('atlas')
+            }}
+          />
         ) : view === 'review' ? (
-          <ReviewView atlas={atlas} progress={progress} onExit={goAtlas} onOpenWord={pushWord} />
+          <ReviewView atlas={atlas} progress={progress} onExit={() => setView('today')} onOpenWord={pushWord} />
         ) : view === 'settings' ? (
-          <Settings atlas={atlas} progress={progress} />
+          <Settings atlas={atlas} progress={progress} onOpenWord={pushWord} />
         ) : view === 'bookmarks' ? (
           bookmarks.length === 0 ? (
             <EmptyState icon="heart" title="生词本还是空的">
               <p>在词条卡片或详情里点 ♥，把想反复看的词收进来。</p>
-              <button type="button" className="wa-btn wa-btn-primary" onClick={goAtlas}>
+              <button type="button" className="wa-btn wa-btn-primary" onClick={() => setView('atlas')}>
                 去图鉴
               </button>
             </EmptyState>
@@ -266,29 +329,7 @@ export function App() {
         )}
       </main>
 
-      {detailWord && atlas ? (
-        <DetailModal
-          atlas={atlas}
-          word={detailWord}
-          progress={progress}
-          onClose={() => setDetailStack([])}
-          onOpenWord={pushWord}
-          onBack={detailStack.length > 1 ? closeDetail : undefined}
-          backLabel={detailBackWord?.word}
-          onPrev={() => {
-            if (detailIndex > 0) setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex - 1].id])
-          }}
-          onNext={() => {
-            if (detailIndex >= 0 && detailIndex < activeList.length - 1) {
-              setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex + 1].id])
-            }
-          }}
-          hasPrev={detailIndex > 0}
-          hasNext={detailIndex >= 0 && detailIndex < activeList.length - 1}
-          onToggleBookmark={toggleBookmark}
-          onMarkLearned={markLearned}
-        />
-      ) : null}
+      {detailModal}
     </div>
   )
 }

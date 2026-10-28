@@ -90,21 +90,36 @@ const fixtureWord = {
   media: 31,
   order: 0,
 }
+const fixtureWords = [
+  fixtureWord,
+  { id: 'abandon', word: 'abandon', zh: 'v. 放弃；抛弃', ipa: '/əˈbændən/', cefr: 'B2', topic: 'society', topicZh: '社会', media: 31, order: 1 },
+  { id: 'study', word: 'study', zh: 'v. 学习；研究', ipa: '/ˈstʌdi/', cefr: 'A1', topic: 'education', topicZh: '教育', media: 31, order: 2 },
+  { id: 'principle', word: 'principle', zh: 'n. 原则；准则', ipa: '/ˈprɪnsəpəl/', cefr: 'B2', topic: 'thinking', topicZh: '思维', media: 31, order: 3 },
+  { id: 'environment', word: 'environment', zh: 'n. 环境；自然环境', ipa: '/ɪnˈvaɪrənmənt/', cefr: 'A2', topic: 'environment', topicZh: '环境', media: 31, order: 4 },
+  { id: 'benefit', word: 'benefit', zh: 'n. 好处；益处', ipa: '/ˈbenɪfɪt/', cefr: 'B1', topic: 'economy', topicZh: '经济', media: 31, order: 5 },
+]
 const fixtureAtlas = {
-  count: 1,
+  count: fixtureWords.length,
   chunk: 100,
-  topics: [{ slug: 'education', zh: '教育' }],
+  topics: [
+    { slug: 'education', zh: '教育' },
+    { slug: 'society', zh: '社会' },
+    { slug: 'thinking', zh: '思维' },
+    { slug: 'environment', zh: '环境' },
+    { slug: 'economy', zh: '经济' },
+  ],
   cefr: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
-  words: [fixtureWord],
-  byId: new Map([[fixtureWord.id, fixtureWord]]),
+  words: fixtureWords,
+  byId: new Map(fixtureWords.map((word) => [word.id, word])),
 }
 const fixtureProgress = {
   v: 1,
   cards: {},
   bookmarks: [],
   days: {},
-  misses: [],
+  mistakes: [],
   typing: [],
+  session: null,
   settings: { accent: 'uk', dailyNew: 10, retention: 0.9, startLevel: 0, spell: true, autoplay: true },
 }
 const testSurface = clientRuntime.__test
@@ -143,9 +158,40 @@ html = render(
 )
 assert.ok(html.includes('library'))
 
-html = render(React.createElement(testSurface.Settings, { atlas: fixtureAtlas, progress: fixtureProgress }), 'Settings')
+html = render(React.createElement(testSurface.Settings, { atlas: fixtureAtlas, progress: fixtureProgress, onOpenWord() {} }), 'Settings')
 assert.ok(html.includes('离线素材'))
 assert.ok(html.includes('导出备份'))
+assert.ok(html.includes('过去 20 周'))
+
+html = render(React.createElement(testSurface.Today, { atlas: fixtureAtlas, progress: fixtureProgress, onStart() {}, onOpenWord() {}, onOpenLevel() {} }), 'Today')
+assert.ok(html.includes('今日旅程') || html.includes('今日已完成') || html.includes('再认识'))
+
+const sessionApi = testSurface.session
+const builtSession = sessionApi.buildSession(fixtureAtlas, fixtureProgress, fixtureProgress.settings, {})
+assert.ok(builtSession.steps.length > 0)
+assert.equal(builtSession.steps[0].kind, 'intro')
+const quizStep = builtSession.steps.find((step) => step.kind !== 'intro')
+assert.ok(quizStep && Array.isArray(quizStep.options))
+let sessionProgress = { ...fixtureProgress, session: builtSession }
+sessionProgress = sessionApi.answerSession(sessionProgress, fixtureAtlas, quizStep, true, 3, quizStep.options[0], fixtureProgress.settings)
+assert.equal(sessionProgress.session.pending.correct, true)
+assert.ok(sessionProgress.cards[quizStep.id])
+const advanced = sessionApi.advanceSession(sessionProgress, 3)
+assert.equal(advanced.session.index, 1)
+assert.equal(sessionApi.sessionStats({ ...builtSession, graded: { library: 3, study: 1 } }).accuracy, 50)
+assert.ok(sessionApi.todayPlan(fixtureAtlas, fixtureProgress, fixtureProgress.settings).fresh.length > 0)
+
+html = render(
+  React.createElement(testSurface.Learn, {
+    atlas: fixtureAtlas,
+    progress: { ...fixtureProgress, session: builtSession },
+    onExit() {},
+    onRestart() {},
+    onOpenWord() {},
+  }),
+  'Learn',
+)
+assert.ok(html.includes('wa-learn'))
 
 html = render(
   React.createElement(testSurface.LookupText, {
@@ -320,7 +366,16 @@ response = await request('/word-atlas/api/progress')
 assert.equal(response.status, 200)
 assert.deepEqual(await response.json(), {})
 
-const progressPayload = { v: 1, cards: { library: { due: 1 } }, bookmarks: ['library'], days: {}, settings: { dailyNew: 20 } }
+const progressPayload = {
+  v: 1,
+  cards: { library: { due: 1 } },
+  bookmarks: ['library'],
+  days: {},
+  mistakes: ['library'],
+  typing: [],
+  session: { id: 's1', steps: [{ id: 'library', kind: 'meaning', options: ['library', 'study'] }], index: 0, graded: {}, newIds: ['library'], reviewIds: [] },
+  settings: { dailyNew: 20 },
+}
 response = await request('/word-atlas/api/progress', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -334,6 +389,8 @@ const saved = await response.json()
 assert.equal(saved.cards.library.due, 1)
 assert.deepEqual(saved.bookmarks, ['library'])
 assert.equal(saved.settings.dailyNew, 20)
+assert.equal(saved.session.id, 's1')
+assert.deepEqual(saved.mistakes, ['library'])
 assert.equal(typeof saved.savedAt, 'number')
 
 response = await request('/word-atlas/api/progress', { method: 'POST', body: 'not json' })

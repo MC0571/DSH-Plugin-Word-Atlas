@@ -23,7 +23,7 @@ import { createOfflineManager } from './offline.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
-const BUILD = '0.2.3'
+const BUILD = '0.3.0'
 const ROUTE = '/word-atlas'
 const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 const DEFAULT_MEDIA_BASE = 'https://0xlei.tech/words/'
@@ -168,7 +168,18 @@ function normalizeProgress(value) {
   const mistakes = Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : []
   const typing = Array.isArray(value.typing) ? value.typing.slice(-500) : []
   const settings = value.settings && typeof value.settings === 'object' && !Array.isArray(value.settings) ? value.settings : {}
-  return { v: 1, cards, bookmarks, days, mistakes, typing, settings, savedAt: Date.now() }
+  const session =
+    value.session &&
+    typeof value.session === 'object' &&
+    !Array.isArray(value.session) &&
+    typeof value.session.id === 'string' &&
+    Array.isArray(value.session.steps) &&
+    Number.isFinite(value.session.index) &&
+    value.session.graded &&
+    typeof value.session.graded === 'object'
+      ? value.session
+      : null
+  return { v: 1, cards, bookmarks, days, mistakes, typing, session, settings, savedAt: Date.now() }
 }
 
 async function loadProgress(file) {

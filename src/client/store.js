@@ -17,7 +17,15 @@ export const defaultSettings = {
 }
 
 export function emptyProgress() {
-  return { v: 1, cards: {}, bookmarks: [], days: {}, mistakes: [], typing: [], settings: { ...defaultSettings } }
+  return { v: 1, cards: {}, bookmarks: [], days: {}, mistakes: [], typing: [], session: null, settings: { ...defaultSettings } }
+}
+
+function sanitizeSession(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  if (typeof value.id !== 'string' || !Array.isArray(value.steps) || !Array.isArray(value.newIds) || !Array.isArray(value.reviewIds)) return null
+  if (!Number.isFinite(value.index) || value.index < 0) return null
+  if (!value.graded || typeof value.graded !== 'object' || Array.isArray(value.graded)) return null
+  return value
 }
 
 function normalize(value) {
@@ -30,6 +38,7 @@ function normalize(value) {
     days: value.days && typeof value.days === 'object' && !Array.isArray(value.days) ? value.days : {},
     mistakes: Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : [],
     typing: Array.isArray(value.typing) ? value.typing.slice(-500) : [],
+    session: sanitizeSession(value.session),
     settings: { ...defaultSettings, ...(value.settings && typeof value.settings === 'object' ? value.settings : {}) },
     ...(typeof value.savedAt === 'number' ? { savedAt: value.savedAt } : {}),
   }
