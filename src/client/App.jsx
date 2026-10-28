@@ -60,6 +60,7 @@ export function App() {
   const [detailStack, setDetailStack] = useState([])
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [readingTarget, setReadingTarget] = useState(null)
+  const [readerFocus, setReaderFocus] = useState(false)
   const progress = useProgress()
   const rootRef = useRef(null)
   useTitlebarInset(rootRef, view)
@@ -199,7 +200,7 @@ export function App() {
   }
 
   return (
-    <div className="wa-root" ref={rootRef}>
+    <div className={`wa-root ${readerFocus ? 'is-reader-focus' : ''}`} ref={rootRef}>
       <header className="wa-header">
         <div className="wa-brand">
           <BrandMark />
@@ -248,6 +249,7 @@ export function App() {
             className={view === tab.id ? 'is-on' : ''}
             onClick={() => {
               if (tab.id === 'read') setReadingTarget(null)
+              setReaderFocus(false)
               setView(tab.id)
             }}
           >
@@ -296,7 +298,7 @@ export function App() {
             }}
           />
         ) : view === 'read' ? (
-          <ReadingPage atlas={atlas} progress={progress} initialId={readingTarget} onOpenWord={pushWord} />
+          <ReadingPage atlas={atlas} progress={progress} initialId={readingTarget} onOpenWord={pushWord} onReaderFocus={setReaderFocus} />
         ) : view === 'galaxy' ? (
           <GalaxyView atlas={atlas} progress={progress} onOpenWord={pushWord} />
         ) : view === 'practice' ? (
@@ -377,6 +379,7 @@ export function App() {
           onClose={() => setPaletteOpen(false)}
           onNavigate={(next) => {
             if (next === 'read') setReadingTarget(null)
+            setReaderFocus(false)
             setView(next)
           }}
           onOpenWord={pushWord}
