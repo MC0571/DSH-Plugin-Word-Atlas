@@ -84,6 +84,7 @@ export function loadEntry(atlas, id) {
   })
 }
 
+export const brandUrl = (name) => `/word-atlas/brand/${name}`
 export const thumbUrl = (id) => `${BASE}/thumb/${id}.webp`
 export const imgUrl = (id) => `${BASE}/img/${id}.webp`
 export const audioUrl = (kind, id) => `${BASE}/audio/${kind}/${id}.mp3`

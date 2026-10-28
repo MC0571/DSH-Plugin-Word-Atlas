@@ -163,8 +163,20 @@ assert.ok(html.includes('离线素材'))
 assert.ok(html.includes('导出备份'))
 assert.ok(html.includes('过去 20 周'))
 
-html = render(React.createElement(testSurface.Today, { atlas: fixtureAtlas, progress: fixtureProgress, onStart() {}, onOpenWord() {}, onOpenLevel() {} }), 'Today')
-assert.ok(html.includes('今日旅程') || html.includes('今日已完成') || html.includes('再认识'))
+html = render(
+  React.createElement(testSurface.Today, {
+    atlas: fixtureAtlas,
+    progress: fixtureProgress,
+    onStart() {},
+    onOpenWord() {},
+    onOpenLevel() {},
+    onOpenTopic() {},
+  }),
+  'Today',
+)
+assert.ok(html.includes('brand/hero.webp'))
+assert.ok(html.includes('按雅思话题探索'))
+assert.ok(html.includes('学习路线'))
 
 const sessionApi = testSurface.session
 const builtSession = sessionApi.buildSession(fixtureAtlas, fixtureProgress, fixtureProgress.settings, {})
@@ -361,6 +373,20 @@ if (mediaLocal) {
   assert.equal(response.status, 302)
 }
 console.log(`host: index / entries / media (${mediaLocal ? 'local files' : 'redirect fallback'}) OK`)
+
+response = await request('/word-atlas/brand/hero.webp', mediaLocal ? {} : { redirect: 'manual' })
+if (mediaLocal) {
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/webp')
+  assert.ok((await response.arrayBuffer()).byteLength > 10000)
+} else {
+  assert.equal(response.status, 302)
+  assert.match(response.headers.get('location') || '', /\/brand\/hero\.webp$/)
+}
+
+response = await request('/word-atlas/brand/..%2Fpackage.json')
+assert.equal(response.status, 404)
+console.log('host: brand assets OK')
 
 response = await request('/word-atlas/api/progress')
 assert.equal(response.status, 200)

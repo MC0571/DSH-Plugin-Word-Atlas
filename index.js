@@ -23,7 +23,7 @@ import { createOfflineManager } from './offline.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
-const BUILD = '0.3.1'
+const BUILD = '0.3.2'
 const ROUTE = '/word-atlas'
 const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 const DEFAULT_MEDIA_BASE = 'https://0xlei.tech/words/'
@@ -32,6 +32,10 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.webp': 'image/webp',
   '.mp3': 'audio/mpeg',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
 }
 
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/
@@ -364,6 +368,21 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics, off
 
       if (path === '/api/offline/cancel' && req.method === 'POST') {
         json(res, offline.cancel())
+        return
+      }
+
+      if (path.startsWith('/brand/')) {
+        const brand = /^\/brand\/([a-z0-9][a-z0-9-]*\.(?:webp|jpg|jpeg|png|svg))$/.exec(path)
+        if (!brand) {
+          notFound(res)
+          return
+        }
+        const file = contentDir ? join(contentDir, 'public', 'brand', brand[1]) : null
+        if (file && existsSync(file)) {
+          serveFile(req, res, file, { 'Cache-Control': 'public, max-age=604800' })
+        } else {
+          redirect(res, `${mediaBase}/brand/${brand[1]}`)
+        }
         return
       }
 

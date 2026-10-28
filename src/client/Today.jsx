@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { loadEntry } from './data.js'
+import { audioUrl, brandUrl, hasMedia, loadEntry, MEDIA } from './data.js'
+import { isMastered } from './fsrs.js'
 import { hashSeed } from './lookup.js'
-import { dayKey, masteredCount, newToday, todayPlan } from './session.js'
+import { dayKey, newToday, todayPlan } from './session.js'
 import { streak } from './store.js'
-import { Icon, WordImage } from './ui.jsx'
+import { AudioButton, Icon, WordImage } from './ui.jsx'
 
 function greeting(hour) {
   if (hour < 5) return '夜深了'
@@ -16,14 +17,42 @@ function greeting(hour) {
 const WEEKDAY = '日一二三四五六'
 const LEVEL_NAMES = ['入门', '基础', '进阶', '中高', '高级', '精通']
 
-export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
+function Ring({ value, size = 88, stroke = 7, children }) {
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference * (1 - Math.min(1, Math.max(0, value || 0)))
+  return (
+    <div className="wa-ring" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        <circle className="wa-ring-track" cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={stroke} />
+        <circle
+          className="wa-ring-fill"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <div className="wa-ring-label">{children}</div>
+    </div>
+  )
+}
+
+export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpenTopic }) {
   const plan = useMemo(() => todayPlan(atlas, progress, progress.settings), [atlas, progress])
   const active = progress.session && !progress.session.finished ? progress.session : null
   const today = progress.days[dayKey()]
   const streakDays = streak(progress.days)
   const learned = Object.keys(progress.cards).length
-  const mastered = masteredCount(progress)
+  const mastered = Object.values(progress.cards).filter(isMastered).length
   const total = plan.due.length + plan.fresh.length
+  const doneToday = today?.r ?? 0
+  const goal = progress.settings.dailyNew + Math.min(plan.due.length, 60)
   const now = new Date()
 
   const week = Array.from({ length: 7 }, (_, index) => {
@@ -36,18 +65,25 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
 
   const levels = useMemo(() => {
     const rows = atlas.cefr.map((name) => ({ name, total: 0, seen: 0, mastered: 0 }))
+    const indexOf = new Map(atlas.cefr.map((name, index) => [name, index]))
     for (const word of atlas.words) {
-      const row = rows[atlas.cefr.indexOf(word.cefr)]
+      const row = rows[indexOf.get(word.cefr)]
       if (!row) continue
       row.total += 1
       const card = progress.cards[word.id]
       if (card) {
         row.seen += 1
-        if (masteredCount({ cards: { [word.id]: card } })) row.mastered += 1
+        if (isMastered(card)) row.mastered += 1
       }
     }
     return rows
   }, [atlas, progress.cards])
+
+  const topicCounts = useMemo(() => {
+    const counts = new Map(atlas.topics.map((topic) => [topic.slug, 0]))
+    for (const word of atlas.words) counts.set(word.topic, (counts.get(word.topic) || 0) + 1)
+    return counts
+  }, [atlas])
 
   const teaser = (active ? active.newIds : plan.fresh).slice(0, 5).map((id) => atlas.byId.get(id)).filter(Boolean)
   const wotd = useMemo(() => {
@@ -67,6 +103,9 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
     }
   }, [atlas, wotd?.id])
 
+  const accent = progress.settings.accent
+  const wotdAudio = hasMedia(wotd || {}, MEDIA[accent])
+
   return (
     <div className="wa-today">
       <header className="wa-today-head">
@@ -77,37 +116,26 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
         <p>今天先温故，再知新。</p>
       </header>
 
-      <section className="wa-journey">
-        <div className="wa-journey-copy">
-          <p className="wa-eyebrow">{active ? '旅程进行中' : total > 0 ? '今日旅程' : '今日已完成'}</p>
+      <section className="wa-today-hero">
+        <img className="wa-today-hero-art" src={brandUrl('hero.webp')} alt="" loading="eager" onError={(event) => { event.currentTarget.style.visibility = 'hidden' }} />
+        <div className="wa-today-hero-shade" aria-hidden="true" />
+        <div className="wa-today-hero-body">
+          <p className="wa-eyebrow">今日学习</p>
           {active ? (
-            <>
-              <h2>
-                还剩 <b>{Math.max(0, active.steps.length - active.index)}</b> 步
-              </h2>
-              <p className="wa-journey-lede">进度已保存，随时接着走。</p>
-            </>
+            <h2>
+              还剩 <b>{Math.max(0, active.steps.length - active.index)}</b> 步
+            </h2>
           ) : total > 0 ? (
-            <>
-              <h2>
-                复习 <b>{plan.due.length}</b>
-                {plan.due.length > 0 && plan.fresh.length > 0 ? ' · ' : null}
-                {plan.fresh.length > 0 ? (
-                  <>
-                    新词 <b>{plan.fresh.length}</b>
-                  </>
-                ) : null}
-              </h2>
-              <p className="wa-journey-lede">约 {plan.minutes} 分钟。先温故，再知新。</p>
-            </>
+            <h2>
+              复习 <b>{plan.due.length}</b> · 新词 <b>{plan.fresh.length}</b>
+            </h2>
           ) : (
-            <>
-              <h2>今天的词都练完了</h2>
-              <p className="wa-journey-lede">想多走一段，也可以。</p>
-            </>
+            <h2>今天的词都练完了</h2>
           )}
-
-          <div className="wa-journey-actions">
+          <p className="wa-today-hero-lede">
+            {active ? '进度已保存，随时接着走。' : total > 0 ? `预计 ${plan.minutes} 分钟 · 先温故，再知新。` : '想多走一段，也可以。'}
+          </p>
+          <div className="wa-today-hero-actions">
             {active || total > 0 ? (
               <button type="button" className="wa-btn wa-btn-primary wa-btn-lg" onClick={() => onStart({})}>
                 {active ? '继续旅程' : '开始今天的旅程'} <Icon name="chevronRight" size={18} />
@@ -123,31 +151,31 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
               </button>
             ) : null}
           </div>
-        </div>
-        <div className="wa-journey-art">
           {teaser.length > 0 ? (
-            <div className="wa-teaser" aria-hidden="true">
-              {teaser.map((word, index) => (
-                <WordImage key={word.id} id={word.id} word={word.word} className={`wa-teaser-${index}`} />
+            <div className="wa-today-teaser" aria-label="今日将遇见的新词">
+              {teaser.map((word) => (
+                <WordImage key={word.id} id={word.id} word={word.word} className="wa-today-teaser-img" />
               ))}
+              <span>今天会遇见它们</span>
             </div>
-          ) : (
-            <div className="wa-journey-orbit">
-              <Icon name="sparkle" size={34} />
-            </div>
-          )}
-          {teaser.length > 0 ? <p>今天会遇见它们</p> : null}
+          ) : null}
         </div>
       </section>
 
       <section className="wa-today-strip">
+        <div className="wa-today-goal">
+          <Ring value={goal ? doneToday / goal : 0}>
+            <b>{doneToday}</b>
+            <small>/ {goal} 题</small>
+          </Ring>
+          <div>
+            <strong>今日目标</strong>
+            <span>已答 {doneToday} · 目标 {goal}</span>
+          </div>
+        </div>
         <div className="wa-today-stat">
           <strong>{streakDays}</strong>
           <span>连续学习 · 天</span>
-        </div>
-        <div className="wa-today-stat">
-          <strong>{today?.r ?? 0}</strong>
-          <span>今日答题</span>
         </div>
         <div className="wa-today-stat">
           <strong>{learned.toLocaleString('en-US')}</strong>
@@ -167,8 +195,9 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
           </div>
           <ol className="wa-week">
             {week.map((day) => (
-              <li key={day.key} className={`${day.value ? 'is-on' : ''} ${day.today ? 'is-today' : ''}`} title={`${day.key}：${day.value} 题`}>
-                <span style={{ height: `${Math.max(8, Math.round((day.value / maxWeek) * 100))}%` }} />
+              <li key={day.key} className={`${day.value ? 'is-on' : 'is-zero'} ${day.today ? 'is-today' : ''}`} title={`${day.key}：${day.value} 题`}>
+                <b>{day.value || ''}</b>
+                <span style={{ height: `${day.value ? Math.max(10, Math.round((day.value / maxWeek) * 100)) : 5}%` }} />
                 <small>{day.label}</small>
               </li>
             ))}
@@ -193,7 +222,13 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
             <p className="wa-wotd-word" lang="en">
               {wotd.word}
             </p>
-            <p className="wa-wotd-ipa">{wotd.ipa}</p>
+            <div className="wa-pron-row">
+              <span className="wa-ipa">{wotd.ipa}</span>
+              {wotdAudio ? <AudioButton audioKey={`${accent}:${wotd.id}`} url={audioUrl(accent, wotd.id)} label="发音" /> : null}
+              {wotdEntry?.ex?.[0] && hasMedia(wotdEntry, MEDIA.ex) ? (
+                <AudioButton audioKey={`ex:${wotd.id}`} url={audioUrl('ex', wotd.id)} label="例句" />
+              ) : null}
+            </div>
             <p className="wa-wotd-zh">{wotd.zh}</p>
             {wotdEntry?.ex?.[0] ? (
               <p className="wa-wotd-ex" lang="en">
@@ -202,29 +237,70 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel }) {
             ) : null}
           </div>
         </section>
-
-        <section className="wa-panel">
-          <h3 className="wa-eyebrow">学习路线 · 从 A1 到 C2</h3>
-          <ol className="wa-levels">
-            {levels.map((level, index) => (
-              <li key={level.name}>
-                <button type="button" onClick={() => onOpenLevel(level.name)} aria-label={`${level.name} ${LEVEL_NAMES[index]}，已学 ${level.seen} / ${level.total}`}>
-                  <span className="wa-level-name">{level.name}</span>
-                  <span className="wa-level-bar">
-                    <i style={{ width: `${Math.round((level.seen / Math.max(1, level.total)) * 100)}%` }} />
-                    <b style={{ width: `${Math.round((level.mastered / Math.max(1, level.total)) * 100)}%` }} />
-                  </span>
-                  <span className="wa-level-count">
-                    {level.seen}
-                    <small>/{level.total}</small>
-                  </span>
-                  <span className="wa-level-label">{LEVEL_NAMES[index]}</span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </section>
       </div>
+
+      <section className="wa-panel">
+        <div className="wa-panel-head">
+          <h3 className="wa-eyebrow">学习路线 · 从 A1 到 C2</h3>
+          <span className="wa-muted">起点：{atlas.cefr[progress.settings.startLevel] || 'A1'}</span>
+        </div>
+        <ol className="wa-route">
+          <span className="wa-route-line" aria-hidden="true" />
+          {levels.map((level, index) => (
+            <li key={level.name}>
+              <button
+                type="button"
+                className={`${index === progress.settings.startLevel ? 'is-start' : ''} ${level.seen ? 'is-on' : ''}`}
+                onClick={() => onOpenLevel(level.name)}
+                aria-label={`${level.name} ${LEVEL_NAMES[index]}，已学 ${level.seen} / ${level.total}，长期记住 ${level.mastered}`}
+              >
+                <span className="wa-route-node">
+                  <b>{level.name}</b>
+                  {index === progress.settings.startLevel ? <em>起点</em> : null}
+                </span>
+                <span className="wa-route-name">{LEVEL_NAMES[index]}</span>
+                <span className="wa-route-count">
+                  {level.seen}
+                  <small>/{level.total}</small>
+                </span>
+                <span className="wa-route-bar">
+                  <i style={{ width: `${Math.round((level.seen / Math.max(1, level.total)) * 100)}%` }} />
+                  <b style={{ width: `${Math.round((level.mastered / Math.max(1, level.total)) * 100)}%` }} />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="wa-panel">
+        <div className="wa-panel-head">
+          <h3 className="wa-eyebrow">按雅思话题探索</h3>
+          <button type="button" className="wa-link" onClick={() => onOpenTopic('all')}>
+            打开图鉴
+          </button>
+        </div>
+        <ul className="wa-topics-grid">
+          {atlas.topics.map((topic) => (
+            <li key={topic.slug}>
+              <button type="button" onClick={() => onOpenTopic(topic.slug)}>
+                <img
+                  src={brandUrl(`topic-${topic.slug}.webp`)}
+                  alt=""
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.style.display = 'none'
+                  }}
+                />
+                <span>
+                  <b>{topic.zh}</b>
+                  <small>{(topicCounts.get(topic.slug) || 0).toLocaleString('en-US')} 个词</small>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
