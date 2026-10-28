@@ -1,0 +1,448 @@
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+  isRead,
+  loadBookChapter,
+  loadBooksIndex,
+  loadReading,
+  loadReadingIndex,
+  readAsset,
+  readingLevelLabel,
+  readingTopicLabel,
+  unlearnedCount,
+} from './readings.js'
+import { update } from './store.js'
+import { EmptyState, Icon, Spinner, playAudio, stopAllAudio } from './ui.jsx'
+
+function RichText({ text, onOpenWord }) {
+  const parts = []
+  const pattern = /\[\[([^\]|]+)\|([^\]]+)\]\]/g
+  let last = 0
+  let match = pattern.exec(text)
+  while (match) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    parts.push({ id: match[1], label: match[2] })
+    last = match.index + match[0].length
+    match = pattern.exec(text)
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return (
+    <>
+      {parts.map((part, index) =>
+        typeof part === 'string' ? (
+          <React.Fragment key={index}>{part}</React.Fragment>
+        ) : (
+          <button key={index} type="button" className="wa-read-word" onClick={() => onOpenWord(part.id)}>
+            {part.label}
+          </button>
+        ),
+      )}
+    </>
+  )
+}
+
+export function ReadingPage({ atlas, progress, initialId, onOpenWord }) {
+  const [tab, setTab] = useState('short')
+  const [selectedId, setSelectedId] = useState(initialId || null)
+  const [state, setState] = useState({ status: 'idle', data: null, error: '' })
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    setTab('short')
+    setSelectedId(initialId || null)
+  }, [initialId])
+
+  useEffect(() => {
+    if (!selectedId) {
+      setState({ status: 'idle', data: null, error: '' })
+      return undefined
+    }
+    let alive = true
+    setState({ status: 'loading', data: null, error: '' })
+    loadReading(selectedId)
+      .then((data) => alive && setState({ status: 'ready', data, error: '' }))
+      .catch((error) => alive && setState({ status: 'error', data: null, error: error.message || '短文加载失败。' }))
+    return () => {
+      alive = false
+    }
+  }, [selectedId, attempt])
+
+  const finishReading = (id) => {
+    update((current) => ({
+      ...current,
+      readings: {
+        ...current.readings,
+        [id]: { done: true, last: Date.now(), times: (current.readings?.[id]?.times || 0) + 1 },
+      },
+    }))
+    setSelectedId(null)
+  }
+
+  if (selectedId) {
+    if (state.status === 'loading') {
+      return (
+        <div className="wa-read-page">
+          <Spinner label="正在打开短文…" />
+        </div>
+      )
+    }
+    if (state.status !== 'ready' || !state.data) {
+      return (
+        <div className="wa-read-page">
+          <button type="button" className="wa-btn wa-btn-ghost" onClick={() => setSelectedId(null)}>
+            <Icon name="chevronLeft" size={16} /> 返回书房
+          </button>
+          <EmptyState icon="book" title="打开失败">
+            <p>{state.error || '短文内容暂时不可用。'}</p>
+            <button type="button" className="wa-btn wa-btn-primary" onClick={() => setAttempt((value) => value + 1)}>
+              重试
+            </button>
+          </EmptyState>
+        </div>
+      )
+    }
+    return (
+      <ShortReader
+        atlas={atlas}
+        item={state.data}
+        progress={progress}
+        onOpenWord={onOpenWord}
+        onBack={() => setSelectedId(null)}
+        onDone={() => finishReading(state.data.id)}
+      />
+    )
+  }
+
+  return (
+    <div className="wa-read-page">
+      <header className="wa-read-head">
+        <p className="wa-eyebrow">书房 · Reading</p>
+        <h1>在故事里，慢慢读。</h1>
+        <p>双语对照，轻点生词查词。阅读不会改变 FSRS 复习进度。</p>
+      </header>
+      <div className="wa-read-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'short'} className={tab === 'short' ? 'is-on' : ''} onClick={() => setTab('short')}>
+          短文
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'books'} className={tab === 'books' ? 'is-on' : ''} onClick={() => setTab('books')}>
+          书架
+        </button>
+      </div>
+      {tab === 'short' ? <ShortLibrary atlas={atlas} progress={progress} onOpen={setSelectedId} /> : <BooksShelf atlas={atlas} progress={progress} onOpenWord={onOpenWord} />}
+    </div>
+  )
+}
+
+function ShortLibrary({ atlas, progress, onOpen }) {
+  const [items, setItems] = useState(null)
+  const [error, setError] = useState('')
+  const [level, setLevel] = useState('all')
+  const [limit, setLimit] = useState(24)
+
+  useEffect(() => {
+    let alive = true
+    loadReadingIndex()
+      .then((data) => alive && setItems(Array.isArray(data.items) ? data.items : []))
+      .catch((reason) => alive && setError(reason.message || '短文列表加载失败。'))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const filtered = useMemo(() => {
+    if (!items) return []
+    return level === 'all' ? items : items.filter((item) => item.cefr === level)
+  }, [items, level])
+
+  if (error) {
+    return (
+      <EmptyState icon="book" title="书房暂时打不开">
+        <p>{error}</p>
+      </EmptyState>
+    )
+  }
+  if (!items) {
+    return <Spinner label="正在整理书架…" />
+  }
+
+  return (
+    <section className="wa-short-library">
+      <div className="wa-read-filters">
+        <button type="button" className={level === 'all' ? 'is-on' : ''} onClick={() => { setLevel('all'); setLimit(24) }}>
+          全部
+        </button>
+        {atlas.cefr.map((name, index) => (
+          <button key={name} type="button" className={level === index ? 'is-on' : ''} onClick={() => { setLevel(index); setLimit(24) }}>
+            {name}
+          </button>
+        ))}
+      </div>
+      <div className="wa-short-grid">
+        {filtered.slice(0, limit).map((item) => {
+          const read = isRead(progress, item.id)
+          return (
+            <button key={item.id} type="button" className={`wa-short-card ${read ? 'is-read' : ''}`} onClick={() => onOpen(item.id)}>
+              <div className="wa-short-card-top">
+                <span className="wa-short-level">{readingLevelLabel(item, atlas)}</span>
+                <span className="wa-short-topic">{readingTopicLabel(item, atlas)}</span>
+                {read ? <span className="wa-short-done"><Icon name="check" size={12} /> 已读</span> : null}
+              </div>
+              <b className="wa-short-zh">{item.titleZh}</b>
+              <span className="wa-short-en" lang="en">{item.title}</span>
+              <span className="wa-short-words">{unlearnedCount(item.ids, progress.cards)} 个未学重点词</span>
+            </button>
+          )
+        })}
+      </div>
+      {filtered.length > limit ? (
+        <button type="button" className="wa-btn wa-btn-ghost wa-read-more" onClick={() => setLimit((current) => current + 24)}>
+          再看 24 篇
+        </button>
+      ) : null}
+      {filtered.length === 0 ? <p className="wa-panel-note">这一级暂时没有短文，换个级别看看。</p> : null}
+    </section>
+  )
+}
+
+function ShortReader({ atlas, item, progress, onOpenWord, onBack, onDone }) {
+  const [bilingual, setBilingual] = useState(true)
+  const [answers, setAnswers] = useState({})
+  const [checked, setChecked] = useState(false)
+  const questions = item.q || []
+  const correctCount = questions.reduce((sum, question, index) => sum + (answers[index] === question.a ? 1 : 0), 0)
+
+  return (
+    <div className="wa-reader">
+      <header className="wa-reader-bar">
+        <button type="button" className="wa-btn wa-btn-ghost" onClick={onBack}>
+          <Icon name="chevronLeft" size={16} /> 书房
+        </button>
+        <span className="wa-reader-meta">
+          {readingLevelLabel(item, atlas)} · {readingTopicLabel(item, atlas)} · {unlearnedCount(item.ids, progress.cards)} 个未学重点词
+        </span>
+        <button type="button" className={`wa-btn wa-btn-ghost ${bilingual ? 'is-on' : ''}`} onClick={() => setBilingual((value) => !value)}>
+          <Icon name="languages" size={15} /> {bilingual ? '双语' : '英文'}
+        </button>
+      </header>
+
+      <article className="wa-reader-body">
+        <h1>{item.titleZh}</h1>
+        <p className="wa-reader-subtitle" lang="en">{item.title}</p>
+        {item.paras.map((paragraph, index) => (
+          <section key={index} className="wa-reader-para">
+            <p lang="en"><RichText text={paragraph} onOpenWord={onOpenWord} /></p>
+            {bilingual ? <p className="wa-reader-zh" lang="zh">{item.zh?.[index]}</p> : null}
+          </section>
+        ))}
+
+        {questions.length ? (
+          <section className="wa-reader-quiz">
+            <h2>理解一下</h2>
+            {questions.map((question, index) => (
+              <div key={index} className="wa-reader-question">
+                <p lang="en">{question.s}</p>
+                <div className="wa-reader-q-options">
+                  {[['T', 'True'], ['F', 'False'], ['NG', 'Not Given']].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`${answers[index] === value ? 'is-chosen' : ''} ${checked && question.a === value ? 'is-answer' : ''}`}
+                      onClick={() => !checked && setAnswers((current) => ({ ...current, [index]: value }))}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {checked ? (
+                  <p className={`wa-reader-why ${answers[index] === question.a ? 'is-ok' : 'is-bad'}`}>
+                    {answers[index] === question.a ? '答对了。' : `正确答案：${question.a === 'T' ? 'True' : question.a === 'F' ? 'False' : 'Not Given'}。`} {question.why}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+            {!checked ? (
+              <button type="button" className="wa-btn wa-btn-ghost" onClick={() => setChecked(true)} disabled={Object.keys(answers).length < questions.length}>
+                检查答案
+              </button>
+            ) : (
+              <p className="wa-panel-note">答对 {correctCount} / {questions.length} 题</p>
+            )}
+          </section>
+        ) : null}
+
+        <div className="wa-reader-actions">
+          <button type="button" className="wa-btn wa-btn-primary wa-btn-lg" onClick={onDone}>
+            完成阅读 <Icon name="check" size={17} />
+          </button>
+          <span className="wa-panel-note">完成后会记录在书房，不影响 FSRS 复习进度。</span>
+        </div>
+      </article>
+    </div>
+  )
+}
+
+function BooksShelf({ atlas, progress, onOpenWord }) {
+  const [books, setBooks] = useState(null)
+  const [error, setError] = useState('')
+  const [chapter, setChapter] = useState(null)
+
+  useEffect(() => {
+    let alive = true
+    loadBooksIndex()
+      .then((data) => alive && setBooks(Array.isArray(data.books) ? data.books : []))
+      .catch((reason) => alive && setError(reason.message || '书架加载失败。'))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!chapter) return undefined
+    let alive = true
+    setChapter((current) => ({ ...current, state: 'loading' }))
+    loadBookChapter(chapter.book.id, chapter.meta.n)
+      .then((data) => alive && setChapter((current) => ({ ...current, state: 'ready', data })))
+      .catch((reason) => alive && setChapter((current) => ({ ...current, state: 'error', error: reason.message })))
+    return () => {
+      alive = false
+    }
+  }, [chapter?.book?.id, chapter?.meta?.n])
+
+  if (error) {
+    return (
+      <EmptyState icon="library" title="书架暂时打不开">
+        <p>{error}</p>
+      </EmptyState>
+    )
+  }
+  if (!books) return <Spinner label="正在搬书上架…" />
+
+  if (chapter) {
+    return (
+      <BookReader
+        atlas={atlas}
+        progress={progress}
+        book={chapter.book}
+        meta={chapter.meta}
+        state={chapter}
+        onOpenWord={onOpenWord}
+        onBack={() => setChapter(null)}
+        onOpenChapter={(meta) => setChapter({ book: chapter.book, meta, state: 'loading' })}
+      />
+    )
+  }
+
+  return (
+    <section className="wa-books">
+      {books.map((book) => (
+        <article key={book.id} className="wa-book">
+          <div className="wa-book-top">
+            <img src={readAsset(book.cover)} alt={`${book.titleZh}封面`} className="wa-book-cover" onError={(event) => { event.currentTarget.style.visibility = 'hidden' }} />
+            <div className="wa-book-copy">
+              <p className="wa-eyebrow">{book.level} · {book.year}</p>
+              <h2>{book.titleZh}</h2>
+              <p className="wa-book-en" lang="en">{book.title}</p>
+              <p className="wa-book-author">{book.authorZh} · {book.author}</p>
+              <p className="wa-book-blurb">{book.blurbZh}</p>
+              <p className="wa-book-first" lang="en">“{book.firstLine}”</p>
+            </div>
+          </div>
+          <div className="wa-book-chapters">
+            {book.chapters.map((item) => {
+              const key = `book:${book.id}:${item.n}`
+              const read = isRead(progress, key)
+              return (
+                <button
+                  key={item.n}
+                  type="button"
+                  className={`wa-chapter ${read ? 'is-read' : ''}`}
+                  disabled={!item.ready}
+                  onClick={() => setChapter({ book, meta: item, state: 'loading' })}
+                >
+                  <span>{item.labelZh} · {item.titleZh}</span>
+                  <small>{item.minutes} 分钟 · {item.words} 词{read ? ' · 已读' : ''}</small>
+                </button>
+              )
+            })}
+          </div>
+        </article>
+      ))}
+    </section>
+  )
+}
+
+function BookReader({ book, meta, state, onBack, onOpenChapter, onDone, onOpenWord }) {
+  const [bilingual, setBilingual] = useState(true)
+  useEffect(() => () => stopAllAudio(), [])
+  if (state.state === 'loading') {
+    return (
+      <div className="wa-reader">
+        <button type="button" className="wa-btn wa-btn-ghost" onClick={onBack}>
+          <Icon name="chevronLeft" size={16} /> 书架
+        </button>
+        <Spinner label="正在打开章节…" />
+      </div>
+    )
+  }
+  if (state.state === 'error' || !state.data) {
+    return (
+      <div className="wa-reader">
+        <button type="button" className="wa-btn wa-btn-ghost" onClick={onBack}>
+          <Icon name="chevronLeft" size={16} /> 书架
+        </button>
+        <EmptyState icon="book" title="这一章暂时打不开">
+          <p>{state.error || '内容加载失败。'}</p>
+        </EmptyState>
+      </div>
+    )
+  }
+  const chapter = state.data
+  const finish = () => {
+    update((current) => ({
+      ...current,
+      readings: {
+        ...current.readings,
+        [`book:${book.id}:${meta.n}`]: { done: true, last: Date.now(), times: (current.readings?.[`book:${book.id}:${meta.n}`]?.times || 0) + 1 },
+      },
+    }))
+    onBack()
+  }
+  const next = book.chapters.find((item) => item.n === meta.n + 1 && item.ready)
+  return (
+    <div className="wa-reader">
+      <header className="wa-reader-bar">
+        <button type="button" className="wa-btn wa-btn-ghost" onClick={onBack}>
+          <Icon name="chevronLeft" size={16} /> {book.titleZh}
+        </button>
+        <span className="wa-reader-meta">{meta.labelZh} · {meta.titleZh} · 约 {meta.minutes} 分钟</span>
+        <button type="button" className={`wa-btn wa-btn-ghost ${bilingual ? 'is-on' : ''}`} onClick={() => setBilingual((value) => !value)}>
+          <Icon name="languages" size={15} /> {bilingual ? '双语' : '英文'}
+        </button>
+      </header>
+      <article className="wa-reader-body">
+        <h1>{meta.titleZh}</h1>
+        <p className="wa-reader-subtitle" lang="en">{book.title} · {meta.label}</p>
+        {(chapter.paras || []).map((paragraph) => (
+          <section key={paragraph.id} className="wa-reader-para">
+            <p lang="en">{paragraph.en}</p>
+            {paragraph.audio ? (
+              <button type="button" className="wa-read-audio" onClick={() => playAudio(`book:${book.id}:${paragraph.id}`, readAsset(paragraph.audio))}>
+                <Icon name="volume" size={14} /> 朗读
+              </button>
+            ) : null}
+            {bilingual && paragraph.zh ? <p className="wa-reader-zh" lang="zh">{paragraph.zh}</p> : null}
+          </section>
+        ))}
+        <div className="wa-reader-actions">
+          <button type="button" className="wa-btn wa-btn-primary wa-btn-lg" onClick={finish}>
+            读完本章 <Icon name="check" size={17} />
+          </button>
+          {next ? (
+            <button type="button" className="wa-btn wa-btn-ghost" onClick={() => onOpenChapter(next)}>
+              下一章 · {next.labelZh} <Icon name="chevronRight" size={16} />
+            </button>
+          ) : null}
+        </div>
+      </article>
+    </div>
+  )
+}

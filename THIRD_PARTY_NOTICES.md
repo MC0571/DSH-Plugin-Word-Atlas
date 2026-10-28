@@ -13,6 +13,13 @@
 
 使用时请保留以上署名。本插件不修改词条内容，仅做展示与复习调度。
 
+## 书房内容（短文与书籍）
+
+`data/readings-index.json`、`data/books-index.json` 以及运行时通过 Host 路由代理的
+短文正文、书籍章节、封面与朗读音频，来自词光线上站点（<https://0xlei.tech/words/>），
+内容版权归 Word Atlas contributors 所有，遵循项目 CC BY 4.0 内容授权；本插件只做展示与学习记录，
+不重新分发书籍全文。`The Little Prince` 原文已进入公有领域。使用时请保留词光署名。
+
 本插件的 `Practice.jsx`、`typing.js`、`galaxy/`（layout / engine / Galaxy）以及
 会话与文本工具的一部分，移植自原项目的 MIT 代码（`src/pages/Practice.tsx`、
 `src/lib/typing.ts`、`src/galaxy/*`、`src/pages/Learn.tsx`、`src/store/session.ts` 等），

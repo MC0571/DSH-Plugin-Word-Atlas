@@ -1,6 +1,6 @@
 {
   "name": "word-atlas-dsh",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "type": "module",
   "description": "词光 · Word Atlas for DeepSeek Harness：7,298 个雅思词的插图图鉴与 FSRS 间隔复习，内置词库、英美发音与插画。",
   "license": "MIT",
@@ -44,7 +44,8 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/build.mjs && node --check index.js && node --check client.js && node scripts/smoke.mjs",
     "test": "node scripts/smoke.mjs",
-    "sync-data": "node scripts/sync-data.mjs"
+    "sync-data": "node scripts/sync-data.mjs",
+    "sync-reading": "node scripts/sync-reading.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -9,6 +9,11 @@
  *   GET  /word-atlas/atlas/entries/N.json  词条分块（每块 100 条）
  *   GET  /word-atlas/atlas/(img|thumb)/<id>.webp
  *   GET  /word-atlas/atlas/audio/(uk|us|ex|ex2)/<id>.mp3
+ *   GET  /word-atlas/readings/index.json   短文索引（打包）
+ *   GET  /word-atlas/readings/<id>.json    短文正文（本机仓库优先，否则代理官方）
+ *   GET  /word-atlas/books/index.json      书架索引（打包）
+ *   GET  /word-atlas/books/<id>/<ch>.json  书籍章节（本机仓库优先，否则代理官方）
+ *   GET  /word-atlas/read-assets/<path>    书房封面/插画等静态资源
  *
  * 词库与素材优先来自本机词光仓库（Config.contentDir 或自动发现的 ../repo），
  * 其次使用插件内置词库；插画/发音缺失时 302 到官方站点。
@@ -23,7 +28,7 @@ import { createOfflineManager } from './offline.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
-const BUILD = '0.4.2'
+const BUILD = '0.5.0'
 const ROUTE = '/word-atlas'
 const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 const DEFAULT_MEDIA_BASE = 'https://0xlei.tech/words/'
@@ -171,6 +176,8 @@ function normalizeProgress(value) {
   const days = value.days && typeof value.days === 'object' && !Array.isArray(value.days) ? value.days : {}
   const mistakes = Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : []
   const typing = Array.isArray(value.typing) ? value.typing.slice(-500) : []
+  const readings =
+    value.readings && typeof value.readings === 'object' && !Array.isArray(value.readings) ? value.readings : {}
   const settings = value.settings && typeof value.settings === 'object' && !Array.isArray(value.settings) ? value.settings : {}
   const session =
     value.session &&
@@ -183,7 +190,7 @@ function normalizeProgress(value) {
     typeof value.session.graded === 'object'
       ? value.session
       : null
-  return { v: 1, cards, bookmarks, days, mistakes, typing, session, settings, savedAt: Date.now() }
+  return { v: 1, cards, bookmarks, days, mistakes, typing, readings, session, settings, savedAt: Date.now() }
 }
 
 async function loadProgress(file) {
@@ -269,6 +276,57 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics, off
       return
     }
     redirect(res, `${mediaBase}/atlas/${rel}`)
+  }
+
+  const readingCache = new Map()
+
+  function jsonCached(res, value) {
+    const body = JSON.stringify(value)
+    res.writeHead(200, {
+      'Content-Type': MIME['.json'],
+      'Content-Length': Buffer.byteLength(body),
+      'Cache-Control': 'public, max-age=600',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    res.end(body)
+  }
+
+  async function proxyJson(res, rel, cacheKey) {
+    const hit = readingCache.get(cacheKey)
+    if (hit && Date.now() - hit.at < 10 * 60 * 1000) {
+      jsonCached(res, hit.value)
+      return
+    }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 12000)
+    try {
+      const upstream = await fetch(`${mediaBase}/${rel}`, {
+        headers: { 'User-Agent': 'word-atlas-dsh/0.5.0', Accept: 'application/json' },
+        signal: controller.signal,
+      })
+      if (upstream.status === 404) {
+        notFound(res)
+        return
+      }
+      if (!upstream.ok) {
+        json(res, { ok: false, error: `upstream-${upstream.status}` }, 502)
+        return
+      }
+      const text = await upstream.text()
+      let parsed
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        json(res, { ok: false, error: 'invalid-upstream-json' }, 502)
+        return
+      }
+      readingCache.set(cacheKey, { at: Date.now(), value: parsed })
+      jsonCached(res, parsed)
+    } catch {
+      json(res, { ok: false, error: 'upstream-unavailable' }, 502)
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   return async function handler(req, res) {
@@ -382,6 +440,55 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics, off
           serveFile(req, res, file, { 'Cache-Control': 'public, max-age=604800' })
         } else {
           redirect(res, `${mediaBase}/brand/${brand[1]}`)
+        }
+        return
+      }
+
+      if (path === '/readings/index.json') {
+        serveFile(req, res, join(DATA_DIR, 'readings-index.json'), { 'Cache-Control': 'public, max-age=3600' })
+        return
+      }
+
+      if (path === '/books/index.json') {
+        serveFile(req, res, join(DATA_DIR, 'books-index.json'), { 'Cache-Control': 'public, max-age=3600' })
+        return
+      }
+
+      let readMatch = /^\/readings\/([a-z0-9][a-z0-9-]*)\.json$/.exec(path)
+      if (readMatch) {
+        const id = readMatch[1]
+        const local = contentDir ? join(contentDir, 'public', 'atlas', 'extras', 'readings', `${id}.json`) : null
+        if (local && existsSync(local)) {
+          serveFile(req, res, local, { 'Cache-Control': 'public, max-age=600' })
+        } else {
+          await proxyJson(res, `atlas/extras/readings/${id}.json`, `read:${id}`)
+        }
+        return
+      }
+
+      readMatch = /^\/books\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)\.json$/.exec(path)
+      if (readMatch) {
+        const [, book, file] = readMatch
+        const local = contentDir ? join(contentDir, 'public', 'books', book, `${file}.json`) : null
+        if (local && existsSync(local)) {
+          serveFile(req, res, local, { 'Cache-Control': 'public, max-age=600' })
+        } else {
+          await proxyJson(res, `books/${book}/${file}.json`, `book:${book}:${file}`)
+        }
+        return
+      }
+
+      if (path.startsWith('/read-assets/')) {
+        const rel = path.slice('/read-assets/'.length)
+        if (!rel || rel.includes('..') || !/^[A-Za-z0-9_./-]+$/.test(rel)) {
+          notFound(res)
+          return
+        }
+        const local = contentDir ? join(contentDir, 'public', rel) : null
+        if (local && existsSync(local)) {
+          serveFile(req, res, local, { 'Cache-Control': 'public, max-age=604800' })
+        } else {
+          redirect(res, `${mediaBase}/${rel}`)
         }
         return
       }

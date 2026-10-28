@@ -17,7 +17,7 @@ export const defaultSettings = {
 }
 
 export function emptyProgress() {
-  return { v: 1, cards: {}, bookmarks: [], days: {}, mistakes: [], typing: [], session: null, settings: { ...defaultSettings } }
+  return { v: 1, cards: {}, bookmarks: [], days: {}, mistakes: [], typing: [], readings: {}, session: null, settings: { ...defaultSettings } }
 }
 
 function sanitizeSession(value) {
@@ -38,6 +38,7 @@ function normalize(value) {
     days: value.days && typeof value.days === 'object' && !Array.isArray(value.days) ? value.days : {},
     mistakes: Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : [],
     typing: Array.isArray(value.typing) ? value.typing.slice(-500) : [],
+    readings: value.readings && typeof value.readings === 'object' && !Array.isArray(value.readings) ? value.readings : {},
     session: sanitizeSession(value.session),
     settings: { ...defaultSettings, ...(value.settings && typeof value.settings === 'object' ? value.settings : {}) },
     ...(typeof value.savedAt === 'number' ? { savedAt: value.savedAt } : {}),
@@ -207,6 +208,7 @@ export function exportBackup() {
         bookmarks: state.bookmarks,
         days: state.days,
         typing: state.typing,
+        readings: state.readings,
         session: null,
         mistakes: state.mistakes,
       },
@@ -249,6 +251,7 @@ export function importBackup(text) {
   }
   const mistakes = Array.isArray(raw.mistakes) ? raw.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : []
   const typing = Array.isArray(raw.typing) ? raw.typing.slice(-500) : []
+  const readings = isObject(raw.readings) ? raw.readings : {}
   const settings = { ...defaultSettings, ...(isObject(data.settings) ? data.settings : {}) }
   state = {
     v: 1,
@@ -257,6 +260,7 @@ export function importBackup(text) {
     days,
     mistakes,
     typing,
+    readings,
     settings,
     savedAt: Date.now(),
   }

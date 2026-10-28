@@ -96,3 +96,9 @@ export function mediaOf(ref) {
 export function hasMedia(ref, bit) {
   return (mediaOf(ref) & bit) !== 0
 }
+
+export const readingsIndexUrl = '/word-atlas/readings/index.json'
+export const readingUrl = (id) => `/word-atlas/readings/${id}.json`
+export const booksIndexUrl = '/word-atlas/books/index.json'
+export const bookChapterUrl = (bookId, n) => `/word-atlas/books/${bookId}/ch-${n}.json`
+export const readAssetUrl = (rel) => `/word-atlas/read-assets/${rel.replace(/^\/+/, '')}`

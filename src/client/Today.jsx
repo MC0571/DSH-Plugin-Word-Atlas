@@ -3,6 +3,7 @@ import { audioUrl, brandUrl, hasMedia, loadEntry, MEDIA } from './data.js'
 import { isMastered } from './fsrs.js'
 import { hashSeed } from './lookup.js'
 import { dayKey, newToday, todayPlan } from './session.js'
+import { loadReadingIndex, readingLevelLabel, readingTopicLabel, selectDailyReading, unlearnedCount } from './readings.js'
 import { streak } from './store.js'
 import { AudioButton, Icon, WordImage } from './ui.jsx'
 
@@ -43,7 +44,7 @@ function Ring({ value, size = 88, stroke = 7, children }) {
   )
 }
 
-export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpenTopic }) {
+export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpenTopic, onOpenReading }) {
   const plan = useMemo(() => todayPlan(atlas, progress, progress.settings), [atlas, progress])
   const active = progress.session && !progress.session.finished ? progress.session : null
   const today = progress.days[dayKey()]
@@ -92,6 +93,7 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpe
     return list[hashSeed(dayKey()) % list.length]
   }, [atlas])
   const [wotdEntry, setWotdEntry] = useState(null)
+  const [dailyReading, setDailyReading] = useState(null)
   useEffect(() => {
     let alive = true
     if (!wotd) return undefined
@@ -102,6 +104,20 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpe
       alive = false
     }
   }, [atlas, wotd?.id])
+
+  useEffect(() => {
+    let alive = true
+    loadReadingIndex()
+      .then((data) => {
+        if (!alive) return
+        const item = selectDailyReading(Array.isArray(data.items) ? data.items : [], progress, atlas)
+        setDailyReading(item || null)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [atlas, progress.settings.startLevel, progress.cards, progress.readings])
 
   const accent = progress.settings.accent
   const wotdAudio = hasMedia(wotd || {}, MEDIA[accent])
@@ -238,6 +254,24 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpe
           </div>
         </section>
       </div>
+
+      {dailyReading ? (
+        <section className="wa-today-reading">
+          <div className="wa-today-reading-mark" aria-hidden="true">“</div>
+          <div className="wa-today-reading-copy">
+            <p className="wa-eyebrow">今日阅读</p>
+            <h3>{dailyReading.titleZh}</h3>
+            <p className="wa-today-reading-en" lang="en">{dailyReading.title}</p>
+            <p className="wa-today-reading-meta">
+              {readingLevelLabel(dailyReading, atlas)} · {readingTopicLabel(dailyReading, atlas)} · {unlearnedCount(dailyReading.ids, progress.cards)} 个未学重点词
+              {progress.readings?.[dailyReading.id]?.done ? ' · 已读' : ''}
+            </p>
+            <button type="button" className="wa-btn wa-btn-primary" onClick={() => onOpenReading(dailyReading.id)}>
+              开始阅读 <Icon name="chevronRight" size={16} />
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="wa-panel">
         <div className="wa-panel-head">

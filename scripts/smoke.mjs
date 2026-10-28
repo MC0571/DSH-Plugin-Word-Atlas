@@ -232,7 +232,19 @@ html = render(
 )
 assert.ok(html.includes('aria-label="命令面板"'))
 assert.ok(html.includes('今日学习'))
-assert.ok(html.includes('学习路线') === false)
+
+html = render(
+  React.createElement(testSurface.ReadingPage, {
+    atlas: fixtureAtlas,
+    progress: fixtureProgress,
+    initialId: null,
+    onOpenWord() {},
+  }),
+  'ReadingPage',
+)
+assert.ok(html.includes('书房'))
+assert.ok(html.includes('短文'))
+assert.ok(html.includes('书架'))
 
 html = render(
   React.createElement(testSurface.LookupText, {
@@ -423,6 +435,19 @@ if (mediaLocal) {
 response = await request('/word-atlas/brand/..%2Fpackage.json')
 assert.equal(response.status, 404)
 console.log('host: brand assets OK')
+
+response = await request('/word-atlas/readings/index.json')
+assert.equal(response.status, 200)
+const readingIndex = await response.json()
+assert.ok(Array.isArray(readingIndex.items))
+assert.ok(readingIndex.items.length >= 700)
+
+response = await request('/word-atlas/books/index.json')
+assert.equal(response.status, 200)
+const booksIndex = await response.json()
+assert.ok(Array.isArray(booksIndex.books))
+assert.ok(booksIndex.books.length >= 1)
+console.log('host: reading indexes OK')
 
 response = await request('/word-atlas/api/progress')
 assert.equal(response.status, 200)

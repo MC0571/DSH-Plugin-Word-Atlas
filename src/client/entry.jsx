@@ -11,6 +11,7 @@ import { compact } from './typing.js'
 import { Practice } from './Practice.jsx'
 import { GalaxyView } from './Galaxy.jsx'
 import { Palette } from './Palette.jsx'
+import { ReadingPage } from './ReadingPage.jsx'
 import { LookupText } from './LookupText.jsx'
 import { Today } from './Today.jsx'
 import { Learn } from './Learn.jsx'
@@ -64,6 +65,7 @@ export const __test = {
   Practice,
   GalaxyView,
   Palette,
+  ReadingPage,
   session: { buildSession, answerSession, advanceSession, gradeFor, sessionStats, todayPlan, distractors },
 }
 
