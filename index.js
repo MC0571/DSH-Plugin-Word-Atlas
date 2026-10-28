@@ -23,7 +23,7 @@ import { createOfflineManager } from './offline.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
-const BUILD = '0.4.1'
+const BUILD = '0.4.2'
 const ROUTE = '/word-atlas'
 const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 const DEFAULT_MEDIA_BASE = 'https://0xlei.tech/words/'
