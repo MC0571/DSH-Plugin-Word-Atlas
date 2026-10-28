@@ -37,27 +37,33 @@ function WordButton({ word, onWord }) {
   )
 }
 
-function Sentence({ paragraph, index, text, lang, activeId, audioLang, onWord, onPlay }) {
+function Sentence({ paragraph, index, text, lang, activeId, audioLang, onWord, onPlay, lookupMode }) {
   const ranges = (lang === 'en' ? paragraph.sents : paragraph.zhSents) || []
   const sentence = ranges[index]
   if (!sentence) return null
   const parts = lang === 'en' ? splitSentenceParts(text, sentence, paragraph.words || []) : [{ text: text.slice(sentence.a, sentence.b) }]
   const domId = sentenceDomId(paragraph.id, lang, index)
-  const playable = audioLang === lang
+  const playable = !lookupMode && audioLang === lang
   return (
     <span
-      className={`wa-book-sent ${activeId === domId ? 'is-speaking' : ''} ${playable ? 'is-playable' : ''}`}
+      className={`wa-book-sent ${activeId === domId ? 'is-speaking' : ''} ${playable ? 'is-playable' : ''} ${lookupMode ? 'is-lookup' : ''}`}
       data-sentence={domId}
       onClick={playable ? () => onPlay(paragraph.id, index, lang) : undefined}
     >
-      {parts.map((part, partIndex) =>
-        part.id ? <WordButton key={partIndex} word={part} onWord={onWord} /> : <React.Fragment key={partIndex}>{part.text}</React.Fragment>,
-      )}
+      {parts.map((part, partIndex) => {
+        if (!part.id) return <React.Fragment key={partIndex}>{part.text}</React.Fragment>
+        if (lookupMode) return <WordButton key={partIndex} word={part} onWord={onWord} />
+        return (
+          <span key={partIndex} className={`wa-book-mark ${part.freq >= 2 ? 'is-marked' : ''}`}>
+            {part.text}
+          </span>
+        )
+      })}
     </span>
   )
 }
 
-function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay }) {
+function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay, lookupMode }) {
   const enSents = paragraph.sents || []
   const zhSents = paragraph.zhSents || []
   return (
@@ -76,6 +82,7 @@ function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay }) {
                     audioLang={audioLang}
                     onWord={onWord}
                     onPlay={onPlay}
+                    lookupMode={lookupMode}
                   />
                   {index < enSents.length - 1 ? ' ' : null}
                 </React.Fragment>
@@ -97,6 +104,7 @@ function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay }) {
                     audioLang={audioLang}
                     onWord={onWord}
                     onPlay={onPlay}
+                    lookupMode={lookupMode}
                   />
                 </React.Fragment>
               ))
@@ -121,14 +129,12 @@ function WordPopover({ atlas, id, x, y, accent, onClose, onOpenWord }) {
   useEffect(() => () => stopAllAudio(), [])
   const entry = state.entry
   return (
-    <div className="wa-book-pop-backdrop" onMouseDown={onClose}>
-      <div
-        className="wa-book-word-pop"
-        role="dialog"
-        aria-label="词义"
-        style={{ left: Math.max(12, x), top: Math.max(12, y) }}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
+    <div
+      className="wa-book-word-pop"
+      role="dialog"
+      aria-label="词义"
+      style={{ left: Math.max(12, x), top: Math.max(12, y) }}
+    >
         <button type="button" className="wa-book-pop-close" onClick={onClose} aria-label="关闭">
           <Icon name="close" size={16} />
         </button>
@@ -165,7 +171,6 @@ function WordPopover({ atlas, id, x, y, accent, onClose, onOpenWord }) {
             </div>
           </>
         ) : null}
-      </div>
     </div>
   )
 }
@@ -176,6 +181,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [lookupMode, setLookupMode] = useState(false)
   const [word, setWord] = useState(null)
   const [listening, setListening] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -187,6 +193,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const audioRef = useRef(null)
   const scrollRef = useRef(null)
   const activeRef = useRef(-1)
+  const loadToken = useRef(0)
   const savedRef = useRef({ at: 0, pid: '', pct: 0 })
 
   const chapter = chapterState.status === 'ready' ? chapterState.data : null
@@ -211,6 +218,23 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   useEffect(() => {
     saveReaderPrefs(prefs)
   }, [prefs])
+
+  useEffect(() => {
+    if (!word) return undefined
+    const onPointerDown = (event) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('.wa-book-word-pop')) return
+      setWord(null)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [word])
+
+  useEffect(() => {
+    if (!lookupMode) return
+    audioRef.current?.pause()
+    setListening(false)
+  }, [lookupMode])
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = prefs.speed
@@ -354,6 +378,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
       }
       const audio = audioRef.current
       if (!audio) return
+      const token = ++loadToken.current
       if (activeRef.current !== index) {
         activeRef.current = index
         setActive(index)
@@ -363,6 +388,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
       setNotice('')
       const src = readAssetUrl(item.audio)
       const begin = () => {
+        if (token !== loadToken.current) return
         setLoadingAudio(false)
         try {
           audio.currentTime = item.t0
@@ -371,17 +397,19 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
         }
         audio.playbackRate = prefsRef.current.speed
         audio.play().catch(() => {
+          if (token !== loadToken.current) return
           setPlaying(false)
+          setLoadingAudio(false)
           setNotice('朗读暂时无法播放，请检查网络。')
         })
       }
       if (audio.dataset.src !== src) {
+        audio.pause()
         audio.dataset.src = src
         audio.src = src
-        setLoadingAudio(true)
-        audio.addEventListener('canplay', begin, { once: true })
         audio.load()
-      } else if (audio.readyState >= 2) {
+      }
+      if (audio.readyState >= 2) {
         begin()
       } else {
         setLoadingAudio(true)
@@ -394,6 +422,14 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const togglePlay = useCallback(() => {
     const audio = audioRef.current
     if (!audio) return
+    if (loadingAudio) {
+      loadToken.current += 1
+      audio.pause()
+      setLoadingAudio(false)
+      setPlaying(false)
+      setNotice('已取消加载。')
+      return
+    }
     if (!audio.paused) {
       audio.pause()
       return
@@ -402,8 +438,19 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
       playAt(0)
       return
     }
-    audio.play().catch(() => setNotice('朗读暂时无法播放，请检查网络。'))
-  }, [playAt])
+    if (audio.readyState < 2 || !audio.dataset.src) {
+      playAt(activeRef.current)
+      return
+    }
+    setLoadingAudio(true)
+    audio.play()
+      .then(() => setLoadingAudio(false))
+      .catch(() => {
+        setLoadingAudio(false)
+        setPlaying(false)
+        setNotice('朗读暂时无法播放，请检查网络。')
+      })
+  }, [loadingAudio, playAt])
 
   const stepSentence = useCallback(
     (delta) => {
@@ -550,6 +597,19 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
           <strong>{meta.labelZh}</strong>
         </div>
         <div className="wa-book-tools">
+          <button
+            type="button"
+            className={`wa-book-tool ${lookupMode ? 'is-on' : ''}`}
+            aria-pressed={lookupMode}
+            aria-label={lookupMode ? '退出查词模式' : '进入查词模式'}
+            onClick={() => {
+              setLookupMode((value) => !value)
+              setWord(null)
+            }}
+          >
+            <Icon name="search" size={16} />
+            <span>查词</span>
+          </button>
           {total ? (
             <button
               type="button"
@@ -575,6 +635,12 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
           </button>
         </div>
       </header>
+
+      {lookupMode ? (
+        <div className="wa-book-lookup-hint" role="status">
+          查词模式：点单词查看释义；再点顶栏「查词」返回句子点播。
+        </div>
+      ) : null}
 
       {settingsOpen ? (
         <>
@@ -676,6 +742,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
                 audioLang={language}
                 onWord={openWord}
                 onPlay={playSentence}
+                lookupMode={lookupMode}
               />
             ))}
           </div>
@@ -724,16 +791,16 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
               type="button"
               className="wa-book-play"
               onClick={togglePlay}
-              aria-label={playing || loadingAudio ? '暂停朗读' : '播放朗读'}
+              aria-label={loadingAudio ? '取消加载' : playing ? '暂停朗读' : '播放朗读'}
             >
-              <Icon name={playing || loadingAudio ? 'pause' : 'play'} size={23} />
+              {loadingAudio ? <Icon name="refresh" size={21} className="wa-book-spin" /> : <Icon name={playing ? 'pause' : 'play'} size={23} />}
             </button>
             <button type="button" className="wa-icon-btn" onClick={() => stepSentence(1)} disabled={active >= total - 1} aria-label="下一句">
               <Icon name="chevronRight" size={21} />
             </button>
             <div className="wa-book-player-count">
               <span>{active + 1} / {total}</span>
-              <small>{loadingAudio ? '正在准备声音' : playing ? `${language === 'zh' ? '中文' : '英文'}朗读` : '从本句继续'}</small>
+              <small>{loadingAudio ? '正在加载…' : notice || (playing ? `${language === 'zh' ? '中文' : '英文'}朗读` : '从本句继续')}</small>
             </div>
             <button type="button" className={`wa-book-follow ${follow ? 'is-on' : ''}`} onClick={() => setFollow((value) => !value)}>
               {follow ? '跟随' : '已暂停滚动'}
@@ -751,11 +818,19 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
           <audio
             ref={audioRef}
             preload="metadata"
-            onPlaying={() => { setPlaying(true); setLoadingAudio(false) }}
+            onCanPlay={() => setLoadingAudio(false)}
+            onWaiting={() => setLoadingAudio(true)}
+            onStalled={() => setLoadingAudio(true)}
+            onPlaying={() => { setPlaying(true); setLoadingAudio(false); setNotice('') }}
             onPause={() => setPlaying(false)}
             onTimeUpdate={onTimeUpdate}
             onEnded={onEnded}
-            onError={() => { setLoadingAudio(false); setNotice('朗读文件暂时不可用，可以先读文字。') }}
+            onError={(event) => {
+              if (!event.currentTarget.dataset.src) return
+              setLoadingAudio(false)
+              setPlaying(false)
+              setNotice('朗读文件暂时不可用，可以先读文字。')
+            }}
           />
         </div>
       ) : null}
@@ -794,13 +869,14 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
               {listenPrimary}
             </p>
             {listenSecondary ? <p className="wa-book-listen-zh">{listenSecondary}</p> : null}
+            {loadingAudio || notice ? <p className="wa-book-listen-status">{loadingAudio ? '正在加载朗读…' : notice}</p> : null}
           </div>
           <footer className="wa-book-listen-controls">
             <button type="button" className="wa-icon-btn" onClick={() => stepSentence(-1)} disabled={active <= 0} aria-label="上一句">
               <Icon name="chevronLeft" size={22} />
             </button>
-            <button type="button" className="wa-book-listen-play" onClick={togglePlay} aria-label={playing ? '暂停朗读' : '播放朗读'}>
-              <Icon name={playing || loadingAudio ? 'pause' : 'play'} size={26} />
+            <button type="button" className="wa-book-listen-play" onClick={togglePlay} aria-label={loadingAudio ? '取消加载' : playing ? '暂停朗读' : '播放朗读'}>
+              {loadingAudio ? <Icon name="refresh" size={23} className="wa-book-spin" /> : <Icon name={playing ? 'pause' : 'play'} size={26} />}
             </button>
             <button type="button" className="wa-icon-btn" onClick={() => stepSentence(1)} disabled={active >= total - 1} aria-label="下一句">
               <Icon name="chevronRight" size={22} />
