@@ -698,8 +698,9 @@
 .wa-detail {
   display: grid;
   grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   width: min(920px, 100%);
-  max-height: min(88vh, 880px);
+  height: min(88vh, 880px);
   border: 1px solid var(--wa-line);
   border-radius: 20px;
   background: var(--dsw-alias-bg-layer-1);
@@ -709,36 +710,47 @@
 
 .wa-detail-art {
   position: relative;
-  background: var(--wa-surface-2);
-  min-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--dsw-alias-brand-primary) 8%, transparent), transparent 70%),
+    var(--wa-surface-2);
+  overflow: hidden;
 }
 
+/* 1:1 插画完整显示，不再用 cover 拉满竖长区域 */
 .wa-detail-img {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex: 1 1 auto;
+  height: auto;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px color-mix(in srgb, #000 18%, transparent);
 }
 
 .wa-detail-art .wa-img-fallback {
-  min-height: 300px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-height: 0;
+  border-radius: 14px;
 }
 
 .wa-detail-art-meta {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: static;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 30px 16px 12px;
-  background: linear-gradient(to top, rgba(4, 8, 14, 0.72), transparent);
-  color: #f4f6fb;
+  padding: 0 2px;
+  background: none;
+  color: var(--wa-muted);
   font-size: 11px;
   letter-spacing: 0.04em;
 }
@@ -765,9 +777,23 @@
 
 .wa-detail-body {
   position: relative;
-  padding: 22px 26px 24px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 26px 0;
+  overflow: hidden;
   min-width: 0;
+  min-height: 0;
+}
+
+/* 固定页头/标题，仅正文滚动，页脚吸底 */
+.wa-detail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 6px 10px 0;
+  margin-right: -6px;
+  scrollbar-gutter: stable;
 }
 
 .wa-detail-close {
@@ -1058,14 +1084,16 @@
 }
 
 .wa-detail-footer {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 22px;
-  padding-top: 14px;
+  margin-top: 0;
+  padding: 12px 0 16px;
   border-top: 1px solid var(--wa-line);
+  background: var(--dsw-alias-bg-layer-1);
 }
 
 .wa-detail-memory {
@@ -1562,16 +1590,34 @@
 
   .wa-detail {
     grid-template-columns: minmax(0, 1fr);
-    max-height: 92vh;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 92vh;
+  }
+
+  .wa-detail-body {
+    padding: 18px 18px 0;
   }
 
   .wa-detail-art {
     min-height: 0;
-    height: 210px;
+    height: auto;
+    padding: 14px;
+    gap: 8px;
   }
 
   .wa-detail-img {
-    height: 210px;
+    width: auto;
+    max-width: 100%;
+    max-height: 30vh;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    border-radius: 12px;
+  }
+
+  .wa-detail-art .wa-img-fallback {
+    width: auto;
+    height: 180px;
+    aspect-ratio: 1 / 1;
   }
 
   .wa-review-card {
