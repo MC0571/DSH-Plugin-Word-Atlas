@@ -121,6 +121,7 @@ export function DetailModal({
 
           {entry ? (
             <>
+              <div className="wa-detail-scroll">
               <div className="wa-pron">
                 {entry.uk ? (
                   <div className="wa-pron-row">
@@ -252,6 +253,7 @@ export function DetailModal({
               ) : null}
 
               {entry.note ? <p className="wa-usage-note">用法提醒：{entry.note}</p> : null}
+              </div>
 
               <div className="wa-detail-footer">
                 <div className="wa-detail-memory">
