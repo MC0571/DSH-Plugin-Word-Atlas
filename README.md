@@ -19,6 +19,7 @@ DeepSeek Harness 插件：在 Harness 侧边栏点「词光」，就能打开一
 - **练习**：单词 / 例句 / 听写三种打字模式，实时 WPM / 准确率
 - **星图**：WebGL2 词汇星系，拖拽旋转/缩放，学习状态亮度，点击打开词条
 - **分享与命令面板**：词条生成分享卡 PNG；⌘K 搜索词条与跳转页面
+- **书房**：今日阅读、732 篇分级短文（双语 + 生词内联查词 + T/F/NG 理解题）、小王子书架
 - **我的页**：统计条、20 周热力图、7 天复习预测、错词本、学习设置、备份导入/导出
 - **Agent 工具**：`word_atlas_lookup`（查词条）与 `word_atlas_search`（按释义/级别/话题搜词）
 
@@ -130,6 +131,7 @@ Host 半按以下顺序寻找本机素材：
 - ✅ **v0.4.0** — Practice 打字练习、Galaxy 词汇星图、分享卡与命令面板
 - ✅ **v0.4.1** — 打字练习忽略空格差异
 - ✅ **v0.4.2** — 移除打字练习的额外可见输入框
+- ✅ **v0.5.0** — 今日阅读与书房（短文/书架/阅读器/理解题）
 - **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 我的/统计（#9）
 - **v0.4.0** — Practice 打字练习（#10）、Galaxy 星图（#11）、分享卡/命令面板（#12）
 - 实现原则与复刻来源索引见 tracking issue #1：优先移植/复用上游 MIT 源码，
@@ -158,6 +160,7 @@ linked 包或已安装包会在下一次 profile 重组时替换模块。
 - 词库文本、插画与录音：**CC BY 4.0**，署名 [Word Atlas contributors（词光）](./THIRD_PARTY_NOTICES.md)
 - `ts-fsrs`：MIT
 - 图标：Lucide（ISC License）
+- 书房短文/书籍章节：来自词光线上站点（Word Atlas contributors，CC BY 4.0）
 
 词光原项目：<https://github.com/designfuchen/word-atlas>
 本插件仓库：<https://github.com/MC0571/DSH-Plugin-Word-Atlas>

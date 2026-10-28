@@ -8,6 +8,26 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-28
+
+v0.5.0：今日阅读与书房复刻。
+
+### Added
+
+- **今日阅读**：Today 页新增今日短文卡片（按每日种子 + 当前等级选一篇），显示中文标题/英文标题/CEFR/话题/未学重点词数，直接进入阅读器。
+- **书房页**（导航新增「书房」tab）：
+  - 短文：732 篇内置索引，可按 CEFR 筛选、分页加载，显示已读状态与未学重点词数；
+  - 短文阅读器：双语/英文切换、正文生词内联点击查词、T/F/NG 理解题与解析、完成阅读记录进度；
+  - 书架：书目（小王子）封面/简介/章节列表，按章阅读，逐段朗读、完成记录；
+- **内容获取**：
+  - 打包 `data/readings-index.json`（732 篇）与 `data/books-index.json`；
+  - Host 新增 `/readings/index.json`、`/readings/<id>.json`、`/books/index.json`、
+    `/books/<id>/<ch>.json`、`/read-assets/<path>` 路由；正文/章节/封面本机仓库优先，
+    否则代理官方站点（10 分钟内存缓存，避免 CORS）；
+  - `scripts/sync-reading.mjs` 同步索引。
+- 阅读进度写入 `progress.readings`，Host/store/导入导出均保留；不改动 FSRS 复习进度。
+- 新图标：library / clock / languages / bookmark（Lucide）。
+
 ## [0.4.2] - 2026-10-28
 
 ### Changed

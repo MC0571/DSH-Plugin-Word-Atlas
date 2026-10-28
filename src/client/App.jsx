@@ -12,6 +12,7 @@ import { Settings } from './Settings.jsx'
 import { Practice } from './Practice.jsx'
 import { GalaxyView } from './Galaxy.jsx'
 import { Palette } from './Palette.jsx'
+import { ReadingPage } from './ReadingPage.jsx'
 import { Icon, Spinner, EmptyState } from './ui.jsx'
 import { useTitlebarInset } from './titlebar.js'
 
@@ -41,6 +42,7 @@ function BrandMark() {
 const TABS = [
   { id: 'today', label: '今日', icon: 'star' },
   { id: 'atlas', label: '图鉴', icon: 'book' },
+  { id: 'read', label: '书房', icon: 'library' },
   { id: 'galaxy', label: '星图', icon: 'orbit' },
   { id: 'review', label: '复习', icon: 'refresh' },
   { id: 'practice', label: '练习', icon: 'keyboard' },
@@ -57,6 +59,7 @@ export function App() {
   const [topic, setTopic] = useState('all')
   const [detailStack, setDetailStack] = useState([])
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [readingTarget, setReadingTarget] = useState(null)
   const progress = useProgress()
   const rootRef = useRef(null)
   useTitlebarInset(rootRef, view)
@@ -243,7 +246,10 @@ export function App() {
             role="tab"
             aria-selected={view === tab.id}
             className={view === tab.id ? 'is-on' : ''}
-            onClick={() => setView(tab.id)}
+            onClick={() => {
+              if (tab.id === 'read') setReadingTarget(null)
+              setView(tab.id)
+            }}
           >
             <Icon name={tab.icon} size={16} /> {tab.label}
             {tab.id === 'atlas' && atlas ? <span className="wa-tab-count">{atlas.count.toLocaleString('en-US')}</span> : null}
@@ -284,7 +290,13 @@ export function App() {
               setTopic(slug)
               setView('atlas')
             }}
+            onOpenReading={(id) => {
+              setReadingTarget(id)
+              setView('read')
+            }}
           />
+        ) : view === 'read' ? (
+          <ReadingPage atlas={atlas} progress={progress} initialId={readingTarget} onOpenWord={pushWord} />
         ) : view === 'galaxy' ? (
           <GalaxyView atlas={atlas} progress={progress} onOpenWord={pushWord} />
         ) : view === 'practice' ? (
@@ -363,7 +375,10 @@ export function App() {
           atlas={atlas}
           progress={progress}
           onClose={() => setPaletteOpen(false)}
-          onNavigate={(next) => setView(next)}
+          onNavigate={(next) => {
+            if (next === 'read') setReadingTarget(null)
+            setView(next)
+          }}
           onOpenWord={pushWord}
         />
       ) : null}

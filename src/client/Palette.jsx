@@ -4,6 +4,7 @@ import { Icon } from './ui.jsx'
 const VIEWS = [
   { id: 'today', label: '今日学习', icon: 'star' },
   { id: 'atlas', label: '图鉴', icon: 'book' },
+  { id: 'read', label: '书房', icon: 'library' },
   { id: 'galaxy', label: '词汇星图', icon: 'orbit' },
   { id: 'review', label: '快速复习', icon: 'refresh' },
   { id: 'practice', label: '打字练习', icon: 'keyboard' },
