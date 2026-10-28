@@ -248,7 +248,7 @@ function Feedback({ atlas, progress, entry, word, correct, onNext, onOpenWord })
       <div className="wa-feedback-main">
         <WordImage id={word.id} word={word.word} className="wa-feedback-thumb" />
         <div className="wa-feedback-text">
-          <p className="wa-feedback-verdict">{correct ? '答对了' : '没关系，记住它'}</p>
+          <p className="wa-feedback-verdict">{correct ? '答对了' : `没关系，记住它 · 正确答案是 ${entry.w}`}</p>
           <p className="wa-feedback-word">
             <b lang="en">{entry.w}</b>
             <span className="wa-ipa">{entry.uk || entry.us}</span>
@@ -406,7 +406,18 @@ function Quiz({ atlas, progress, session, step, onOpenWord }) {
             const className = pending ? (isAnswer ? 'is-answer' : chosen ? 'is-chosen' : 'is-dim') : ''
             return (
               <li key={option.id}>
-                <button type="button" className={`wa-option ${className}`} data-option={option.id} onClick={() => submit(option.id, isAnswer)} disabled={Boolean(pending)}>
+                <button
+                  type="button"
+                  className={`wa-option ${className}`}
+                  data-option={option.id}
+                  onClick={() => submit(option.id, isAnswer)}
+                  disabled={Boolean(pending)}
+                  aria-label={
+                    pending
+                      ? `${isAnswer ? '正确答案' : chosen ? '你的选择，错误' : '未选择'}：${step.kind === 'meaning' ? option.zh : option.word}`
+                      : undefined
+                  }
+                >
                   <kbd>{index + 1}</kbd>
                   <span lang={step.kind === 'meaning' ? 'zh' : 'en'}>{step.kind === 'meaning' ? option.zh : option.word}</span>
                   {pending && isAnswer ? <Icon name="check" size={18} /> : null}
@@ -459,7 +470,15 @@ function Summary({ atlas, progress, session, onExit, onRestart, onOpenWord }) {
       </div>
       <ul className="wa-summary-words">
         {words.map((word) => (
-          <li key={word.id} className={session.graded[word.id] === Rating.Again ? 'is-wrong' : ''} role="button" tabIndex={0} onClick={() => onOpenWord(word.id)} onKeyDown={(event) => event.key === 'Enter' && onOpenWord(word.id)}>
+          <li
+            key={word.id}
+            className={session.graded[word.id] === Rating.Again ? 'is-wrong' : ''}
+            role="button"
+            tabIndex={0}
+            title={`${word.word} ${word.zh}`}
+            onClick={() => onOpenWord(word.id)}
+            onKeyDown={(event) => event.key === 'Enter' && onOpenWord(word.id)}
+          >
             <WordImage id={word.id} word={word.word} className="wa-summary-thumb" />
             <span lang="en">{word.word}</span>
             <small>{word.zh}</small>
