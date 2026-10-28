@@ -377,7 +377,6 @@ function Quiz({ atlas, progress, session, step, onOpenWord }) {
             aria-label="再听一遍"
           >
             <Icon name="volume" size={44} />
-            <span />
           </button>
           <span className="wa-hint">再听一遍</span>
         </div>
