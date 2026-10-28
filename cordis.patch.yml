@@ -1,0 +1,14 @@
+# 词光 · Word Atlas — Host 插件行 + Web Client 页面
+# 安装后在侧边栏出现「词光」图标，打开即进入词汇图鉴与复习页面。
+#
+# 可选 Config：
+#   contentDir  词光仓库 checkout 路径（含 public/atlas/）。留空时自动查找
+#               <插件目录>/../repo 与 $WORD_ATLAS_CONTENT_DIR；两者都没有时
+#               使用插件内置词库，插画/发音改从官方站点读取。
+#   mediaBase   官方素材根地址，默认 https://0xlei.tech/words/
+#   stateFile   复习进度保存文件；默认 $DSH_HOME/word-atlas-dsh/progress.json
+#   tools       默认 true；设为 false 时不注册 word_atlas_lookup / word_atlas_search
+- insert:
+    - id: word-atlas
+      name: 'word-atlas-dsh'
+      config: {}

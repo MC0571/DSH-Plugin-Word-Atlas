@@ -1,0 +1,73 @@
+{
+  "name": "word-atlas-dsh",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "词光 · Word Atlas for DeepSeek Harness：7,298 个雅思词的插图图鉴与 FSRS 间隔复习，内置词库、英美发音与插画。",
+  "license": "MIT",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "client.js",
+    "tools.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale/*.json",
+    "data/**/*.json",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    },
+    "meta": {
+      "title": "词光 · Word Atlas",
+      "description": "雅思词汇插图图鉴：7,298 个词、19 个话题、英美发音、FSRS 间隔复习与生词本。"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs && node --check index.js && node --check client.js && node scripts/smoke.mjs",
+    "test": "node scripts/smoke.mjs",
+    "sync-data": "node scripts/sync-data.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-fsrs": "5.4.2"
+  },
+  "author": "MC0571",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MC0571/DSH-Plugin-Word-Atlas.git"
+  },
+  "homepage": "https://github.com/MC0571/DSH-Plugin-Word-Atlas#readme",
+  "bugs": {
+    "url": "https://github.com/MC0571/DSH-Plugin-Word-Atlas/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "word-atlas",
+    "ielts",
+    "vocabulary",
+    "fsrs",
+    "spaced-repetition"
+  ]
+}

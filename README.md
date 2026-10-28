@@ -1,0 +1,118 @@
+# 词光 · Word Atlas for DeepSeek Harness
+
+[![CI](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/Code-MIT-17283B)](./LICENSE)
+[![Dataset: CC BY 4.0](https://img.shields.io/badge/Dataset-CC_BY_4.0-AD5038)](./THIRD_PARTY_NOTICES.md)
+[![Version](https://img.shields.io/github/v/tag/MC0571/DSH-Plugin-Word-Atlas?label=release)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/tags)
+
+把开源项目 [designfuchen/word-atlas](https://github.com/designfuchen/word-atlas)（词光 · Word Atlas）做成
+DeepSeek Harness 插件：在 Harness 侧边栏点「词光」，就能打开一张可以听、可以练、可以复习的雅思词汇图鉴。
+
+- **7,298** 个词条，19 个话题，CEFR A1–C2
+- 每词一幅插画、英美双发音、两条例句朗读
+- **FSRS** 间隔复习（Again / Hard / Good / Easy），进度保存在本机
+- 生词本、按 CEFR / 话题筛选、中英释义搜索
+- **Agent 工具**：`word_atlas_lookup`（查词条）与 `word_atlas_search`（按释义/级别/话题搜词）
+
+## 安装
+
+在 DSH 里用 `plugin_manager` 安装（需要 danger-full-access 或审批）：
+
+```text
+action: install_bundle
+target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
+```
+
+本地开发时也可以直接安装链接目录：
+
+```text
+action: install_bundle
+target: /path/to/DSH-Plugin-Word-Atlas
+```
+
+安装后侧边栏出现「词光」图标；插件页面注册在 `main` 槽的 `word-atlas` key，
+侧边栏入口注册在 `sidebar.panellist`（order 22）。卸载用 `remove_bundle`，目标是 `word-atlas-dsh`。
+
+## 词库与素材来源
+
+插件自带一份词库索引与词条分块（`data/`，约 7 MB，来自上游 CC BY 4.0 数据），
+因此**没有本机素材也能浏览全部词条**。插画与发音优先从本机词光仓库读取
+（`public/atlas/`）；找不到时 302 到官方站点 `https://0xlei.tech/words/`。
+
+Host 半按以下顺序寻找本机素材：
+
+1. Config `contentDir`（相对路径按插件目录解析）
+2. 环境变量 `WORD_ATLAS_CONTENT_DIR`
+3. `<本插件目录>/../repo`（例如工作区的 `repo/` 克隆）
+4. `<本插件目录>/content`
+
+想获得完整离线体验，把 [词光仓库](https://github.com/designfuchen/word-atlas) 克隆到
+`../repo` 或配置 `contentDir` 即可。
+
+## Agent 工具
+
+| 工具 | 用途 |
+| --- | --- |
+| `word_atlas_lookup` | 按英文单词或词条 id 返回完整词条：英美音标、CEFR、话题、中英释义、例句、搭配、词族、近反义、提示与插画链接 |
+| `word_atlas_search` | 按英文单词 / 中文释义 / 音标搜索，可按 CEFR（A1–C2）与 19 个话题过滤 |
+
+工具只在 Host 存在 `tools` 服务时注册；`config.tools: false` 可关闭。
+
+## Config（`cordis.patch.yml`）
+
+```yaml
+- id: word-atlas
+  config:
+    contentDir: /path/to/word-atlas        # 可选，含 public/atlas/ 的仓库目录
+    mediaBase: https://0xlei.tech/words/   # 可选，官方素材根地址
+    stateFile: /path/to/progress.json      # 可选，默认 $DSH_HOME/word-atlas-dsh/progress.json
+    tools: true                            # 可选，false 时不注册 Agent 工具
+```
+
+## HTTP 路由（同源，页面内使用）
+
+| 路由 | 说明 |
+| --- | --- |
+| `GET /word-atlas/health` | 运行状态：词库数量、素材来源、工具与进度文件路径 |
+| `GET /word-atlas/api/progress` | 读取 FSRS 复习进度 |
+| `POST /word-atlas/api/progress` | 保存复习进度（JSON，≤ 4 MB） |
+| `GET /word-atlas/atlas/index.json` | 浏览索引（510 KB） |
+| `GET /word-atlas/atlas/entries/<n>.json` | 词条分块（每块 100 条） |
+| `GET /word-atlas/atlas/thumb/<id>.webp` | 缩略插画 |
+| `GET /word-atlas/atlas/img/<id>.webp` | 完整插画 |
+| `GET /word-atlas/atlas/audio/<uk\|us\|ex\|ex2>/<id>.mp3` | 发音 / 例句朗读（支持 Range） |
+
+## 版本与发布
+
+版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)，当前版本见 `package.json` 与
+[CHANGELOG.md](./CHANGELOG.md)。发布约定：
+
+1. 修改 `package.json` 的 `version` 并更新 `CHANGELOG.md`；
+2. 提交后在 `main` 打 `v<version>` 标签（如 `v0.1.0`）并推送；
+3. 为该标签创建同名 GitHub Release；
+4. CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑 `npm run check`。
+
+词库内容同步自上游（CC BY 4.0），可用 `npm run sync-data` 从本机词光仓库重新生成 `data/`。
+
+## 开发
+
+```bash
+npm install          # esbuild + ts-fsrs + react/react-dom（仅构建/测试期）
+npm run build        # src/client/*.jsx -> client.js（CJS 包进 __ModuleLoader__）
+npm test             # 冒烟测试：客户端模块/视图渲染 + Host 路由 + 进度 + Agent 工具
+npm run check        # build + 语法检查 + smoke
+npm run sync-data    # 从 ../repo（或 WORD_ATLAS_CONTENT_DIR）同步内置词库
+```
+
+改 Host 代码（`index.js` / `tools.js`）后，在 profile 里重新安装本 bundle
+（`plugin_manager` remove_bundle → install_bundle）即可生效，无需重启 DSH：
+linked 包或已安装包会在下一次 profile 重组时替换模块。
+
+## 授权
+
+- 插件代码：[MIT](./LICENSE)
+- 词库文本、插画与录音：**CC BY 4.0**，署名 [Word Atlas contributors（词光）](./THIRD_PARTY_NOTICES.md)
+- `ts-fsrs`：MIT
+
+词光原项目：<https://github.com/designfuchen/word-atlas>
+本插件仓库：<https://github.com/MC0571/DSH-Plugin-Word-Atlas>
