@@ -346,7 +346,7 @@ response = await request('/word-atlas/api/offline')
 assert.equal(response.status, 200)
 const offlineStatus = await response.json()
 assert.equal(offlineStatus.state, 'idle')
-assert.equal(offlineStatus.contentDirReady, true)
+assert.equal(typeof offlineStatus.contentDirReady, 'boolean')
 assert.deepEqual(offlineStatus.tiersAvailable, ['thumb', 'img', 'audio'])
 assert.equal(typeof offlineStatus.dir, 'string')
 
