@@ -204,6 +204,8 @@ html = render(
   'Learn',
 )
 assert.ok(html.includes('wa-learn'))
+assert.ok(html.includes('wa-learn-bar'))
+assert.ok(html.includes('退出'))
 
 html = render(
   React.createElement(testSurface.LookupText, {
@@ -231,6 +233,10 @@ assert.equal(lookup.resolve('studied'), 'study')
 assert.equal(lookup.resolve('children'), 'child')
 assert.equal(lookup.resolve('zzzzzz'), null)
 assert.deepEqual(testSurface.candidateBases('running').includes('run'), true)
+assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIntel', left: 0, top: 0 }), true)
+assert.equal(testSurface.detectTitlebar({ protocol: 'http:', platform: 'MacIntel', left: 0, top: 0 }), false)
+assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIntel', left: 280, top: 0 }), false)
+assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIntel', left: 0, top: 0, fullscreen: true }), false)
 const clientSource = readFileSync(join(root, 'client.js'), 'utf8')
 assert.ok(clientSource.includes('.wa-root .wa-btn-primary'), 'primary button text must not be overridden by the base button rule')
 assert.ok(clientSource.includes('var(--dsw-alias-bg-base)'), 'primary button text must follow the host base color')
