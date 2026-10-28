@@ -13,6 +13,12 @@
 
 使用时请保留以上署名。本插件不修改词条内容，仅做展示与复习调度。
 
+## 图标
+
+- **Lucide**（`lucide-static` v1.63.0）— ISC License — <https://lucide.dev>
+  `src/client/icons.js` 中的图标路径来自 Lucide，已内联进构建产物 `client.js`，不新增运行时依赖。
+  版权归 Lucide contributors 所有。
+
 ## 依赖
 
 - **ts-fsrs**（MIT）— 构建时打包进 `client.js`，用于 FSRS 间隔复习调度。

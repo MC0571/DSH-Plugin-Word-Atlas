@@ -122,6 +122,7 @@ Host 半按以下顺序寻找本机素材：
 - ✅ **v0.3.2** — Today 学习首页改版（品牌素材 / Hero / 周统计 / 路线 / 话题）
 - ✅ **v0.3.3** — Desktop 窗口安全区 + Learn slim 顶部栏
 - ✅ **v0.3.4** — 修复宿主 `corner-shape` 导致的圆形控件变形
+- ✅ **v0.3.5** — 图标库统一为 Lucide，修复播放图标几何
 - **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 我的/统计（#9）
 - **v0.4.0** — Practice 打字练习（#10）、Galaxy 星图（#11）、分享卡/命令面板（#12）
 - 实现原则与复刻来源索引见 tracking issue #1：优先移植/复用上游 MIT 源码，
@@ -149,6 +150,7 @@ linked 包或已安装包会在下一次 profile 重组时替换模块。
 - 插件代码：[MIT](./LICENSE)
 - 词库文本、插画与录音：**CC BY 4.0**，署名 [Word Atlas contributors（词光）](./THIRD_PARTY_NOTICES.md)
 - `ts-fsrs`：MIT
+- 图标：Lucide（ISC License）
 
 词光原项目：<https://github.com/designfuchen/word-atlas>
 本插件仓库：<https://github.com/MC0571/DSH-Plugin-Word-Atlas>

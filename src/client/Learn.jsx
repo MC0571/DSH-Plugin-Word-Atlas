@@ -376,7 +376,7 @@ function Quiz({ atlas, progress, session, step, onOpenWord }) {
             onClick={() => hasMedia(entry, MEDIA[accent]) && playAudio(`listen:${step.id}:replay:${Date.now()}`, audioUrl(accent, word.id))}
             aria-label="再听一遍"
           >
-            <Icon name="volume" size={40} />
+            <Icon name="volume" size={44} />
             <span />
           </button>
           <span className="wa-hint">再听一遍</span>

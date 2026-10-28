@@ -8,6 +8,18 @@
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-10-28
+
+### Fixed
+
+- 听音辨词的播放图标改为 **Lucide `volume-2`**（ISC License）的官方路径，
+  替换手绘 SVG；图标轮廓与重心更规整，播放圆钮内图标放大到 44px。
+- 插件内所有图标统一改用 Lucide 图标库路径（搜索 / 星标 / 心形 / 关闭 /
+  左右箭头 / 书本 / 刷新 / 勾选 / 信息 / 播放 / 暂停 / 用户 / 地球等），
+  避免手绘路径在大尺寸下的几何误差。
+- `src/client/icons.js` 自动生成并内联进 `client.js`，不新增运行时依赖；
+  Lucide ISC 授权已写入 `THIRD_PARTY_NOTICES.md` 与 README。
+
 ## [0.3.4] - 2026-10-28
 
 ### Fixed

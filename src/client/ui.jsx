@@ -1,37 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { thumbUrl, imgUrl } from './data.js'
+import { ICON_HTML } from './icons.js'
 
 /* ------------------------------------------------------------------ icons */
 
-const ICON_PATHS = {
-  search: [<circle key="c" cx="11" cy="11" r="6.5" />, <path key="l" d="M16 16l4.5 4.5" />],
-  star: [<path key="s" d="M12 3.6l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" />],
-  sparkle: [
-    <path key="a" d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z" />,
-    <path key="b" d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />,
-  ],
-  heart: [<path key="h" d="M12 19.5s-7-4.3-7-9A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5c0 4.7-7 9-7 9z" />],
-  volume: [<path key="v" d="M4 9.5h3.2L12 6v12L7.2 14.5H4z" />, <path key="w" d="M15.5 8.5a5 5 0 0 1 0 7" />, <path key="x" d="M18 6a8.5 8.5 0 0 1 0 12" />],
-  close: [<path key="a" d="M6 6l12 12" />, <path key="b" d="M18 6L6 18" />],
-  chevronLeft: [<path key="c" d="M14.5 5.5L8 12l6.5 6.5" />],
-  chevronRight: [<path key="c" d="M9.5 5.5L16 12l-6.5 6.5" />],
-  book: [
-    <path key="a" d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z" />,
-    <path key="b" d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5" />,
-  ],
-  layers: [<path key="a" d="M12 3l8 4.5-8 4.5-8-4.5z" />, <path key="b" d="M4 12l8 4.5 8-4.5" />, <path key="c" d="M4 16.5L12 21l8-4.5" />],
-  refresh: [<path key="a" d="M19 12a7 7 0 1 1-2.1-5" />, <path key="b" d="M19.5 4v4.5H15" />],
-  check: [<path key="c" d="M5 12.5l4.2 4.2L19 7" />],
-  info: [<circle key="a" cx="12" cy="12" r="8.5" />, <path key="b" d="M12 11v5.5" />, <path key="c" d="M12 7.8v.4" />],
-  play: [<path key="p" d="M8 5.5l10 6.5-10 6.5z" />],
-  pause: [<path key="a" d="M9 6v12" />, <path key="b" d="M15 6v12" />],
-  user: [<circle key="a" cx="12" cy="8" r="3.6" />, <path key="b" d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />],
-  globe: [<circle key="a" cx="12" cy="12" r="8.5" />, <path key="b" d="M3.5 12h17" />, <path key="c" d="M12 3.5c2.5 2.4 3.8 5.3 3.8 8.5S14.5 18.1 12 20.5c-2.5-2.4-3.8-5.3-3.8-8.5S9.5 5.9 12 3.5z" />],
-}
 
 export function Icon({ name, size = 18, filled = false, className = '', ...rest }) {
-  const paths = ICON_PATHS[name]
-  if (!paths) return null
+  const inner = ICON_HTML[name]
+  if (!inner) return null
   return (
     <svg
       viewBox="0 0 24 24"
@@ -44,10 +20,9 @@ export function Icon({ name, size = 18, filled = false, className = '', ...rest 
       strokeLinejoin="round"
       aria-hidden="true"
       className={className}
+      dangerouslySetInnerHTML={{ __html: inner }}
       {...rest}
-    >
-      {paths}
-    </svg>
+    />
   )
 }
 
