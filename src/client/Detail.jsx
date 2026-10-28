@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { loadEntry, hasMedia, mediaOf, audioUrl, MEDIA } from './data.js'
+import { loadEntry, hasMedia, audioUrl, MEDIA } from './data.js'
+import { LookupText } from './LookupText.jsx'
 import { formatInterval, isDue } from './fsrs.js'
 import {
   AudioButton,
@@ -8,22 +9,9 @@ import {
   Overlay,
   Spinner,
   WordImage,
-  splitHighlight,
   splitPair,
   stopAllAudio,
 } from './ui.jsx'
-
-function Highlight({ text, word }) {
-  const parts = splitHighlight(text, word)
-  if (!parts) return <>{text}</>
-  return (
-    <>
-      {parts[0]}
-      <mark>{parts[1]}</mark>
-      {parts[2]}
-    </>
-  )
-}
 
 export function DetailModal({
   atlas,
@@ -37,6 +25,8 @@ export function DetailModal({
   onOpenWord,
   onToggleBookmark,
   onMarkLearned,
+  onBack,
+  backLabel,
 }) {
   const [entry, setEntry] = useState(null)
   const [error, setError] = useState('')
@@ -100,6 +90,11 @@ export function DetailModal({
           </button>
 
           <header className="wa-detail-head">
+            {onBack ? (
+              <button type="button" className="wa-icon-btn wa-back-btn" onClick={onBack} aria-label={backLabel ? `返回 ${backLabel}` : '返回上一个词'} title={backLabel ? `返回 ${backLabel}` : '返回上一个词'}>
+                <Icon name="chevronLeft" size={18} />
+              </button>
+            ) : null}
             <div className="wa-tags">
               <CefrBadge level={word.cefr} />
               {topicLabel ? <span className="wa-chip">{topicLabel}</span> : null}
@@ -178,7 +173,7 @@ export function DetailModal({
                             <span className={`wa-ex-tag ${index ? 'is-ielts' : ''}`}>{index ? '雅思语境' : '日常'}</span>
                           ) : null}
                           <p className="wa-ex-en" lang="en">
-                            <Highlight text={example.en} word={word.word} />
+                            <LookupText atlas={atlas} progress={progress} text={example.en} headword={word.word} onOpenWord={onOpenWord} />
                             {playable ? (
                               <AudioButton
                                 audioKey={`${kind}:${word.id}`}

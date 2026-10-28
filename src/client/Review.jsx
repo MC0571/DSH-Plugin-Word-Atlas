@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { audioUrl, hasMedia, loadEntry, MEDIA } from './data.js'
 import { GRADE_LABELS, GRADE_ORDER, Rating, formatInterval, isMastered, preview, review, isDue } from './fsrs.js'
 import { bumpDay, update } from './store.js'
-import { AudioButton, CefrBadge, EmptyState, Icon, Spinner, WordImage, splitHighlight } from './ui.jsx'
+import { AudioButton, CefrBadge, EmptyState, Icon, Spinner, WordImage } from './ui.jsx'
+import { LookupText } from './LookupText.jsx'
 
 const DUE_LIMIT = 100
 
@@ -163,7 +164,7 @@ function ReviewSummary({ session, atlas, progress, onAgain, onExit }) {
   )
 }
 
-function ReviewCard({ atlas, progress, item, entry, stats, onReveal, onGrade }) {
+function ReviewCard({ atlas, progress, item, entry, stats, onReveal, onGrade, onOpenWord }) {
   const now = Date.now()
   const intervals = preview(item.card, now, progress.settings.retention)
   const newWord = !item.card
@@ -213,18 +214,13 @@ function ReviewCard({ atlas, progress, item, entry, stats, onReveal, onGrade }) 
             </ol>
             {entry?.ex?.[0] ? (
               <p className="wa-review-example" lang="en">
-                {(() => {
-                  const parts = splitHighlight(entry.ex[0].en, item.word.word)
-                  return parts ? (
-                    <>
-                      {parts[0]}
-                      <mark>{parts[1]}</mark>
-                      {parts[2]}
-                    </>
-                  ) : (
-                    entry.ex[0].en
-                  )
-                })()}
+                <LookupText
+                  atlas={atlas}
+                  progress={progress}
+                  text={entry.ex[0].en}
+                  headword={item.word.word}
+                  onOpenWord={onOpenWord}
+                />
               </p>
             ) : null}
             {entry?.ex?.[0]?.zh ? <p className="wa-review-example-zh">{entry.ex[0].zh}</p> : null}
@@ -251,7 +247,7 @@ function ReviewCard({ atlas, progress, item, entry, stats, onReveal, onGrade }) 
   )
 }
 
-export function ReviewView({ atlas, progress, onExit }) {
+export function ReviewView({ atlas, progress, onExit, onOpenWord }) {
   const [session, setSession] = useState(null)
   const [entry, setEntry] = useState(null)
   const [entryFailed, setEntryFailed] = useState(false)
@@ -389,6 +385,7 @@ export function ReviewView({ atlas, progress, onExit }) {
         stats={{ revealed: session.revealed }}
         onReveal={reveal}
         onGrade={grade}
+        onOpenWord={onOpenWord}
       />
     </div>
   )

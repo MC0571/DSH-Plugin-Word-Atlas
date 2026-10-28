@@ -25,6 +25,7 @@ const ICON_PATHS = {
   info: [<circle key="a" cx="12" cy="12" r="8.5" />, <path key="b" d="M12 11v5.5" />, <path key="c" d="M12 7.8v.4" />],
   play: [<path key="p" d="M8 5.5l10 6.5-10 6.5z" />],
   pause: [<path key="a" d="M9 6v12" />, <path key="b" d="M15 6v12" />],
+  user: [<circle key="a" cx="12" cy="8" r="3.6" />, <path key="b" d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />],
   globe: [<circle key="a" cx="12" cy="12" r="8.5" />, <path key="b" d="M3.5 12h17" />, <path key="c" d="M12 3.5c2.5 2.4 3.8 5.3 3.8 8.5S14.5 18.1 12 20.5c-2.5-2.4-3.8-5.3-3.8-8.5S9.5 5.9 12 3.5z" />],
 }
 

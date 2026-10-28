@@ -12,6 +12,9 @@ DeepSeek Harness 插件：在 Harness 侧边栏点「词光」，就能打开一
 - 每词一幅插画、英美双发音、两条例句朗读
 - **FSRS** 间隔复习（Again / Hard / Good / Easy），进度保存在本机
 - 生词本、按 CEFR / 话题筛选、中英释义搜索
+- **例句点词查询**：例句里点任意英文词弹出释义浮窗，可播放发音或跳转词卡（对齐线上版）
+- **离线素材包**：缩略图 / 完整插画 / 发音分档下载，或从本机词光仓库导入；断网也能看图听音
+- **我的页**：学习设置、备份导出/导入（兼容词光线上版备份）、清空记录
 - **Agent 工具**：`word_atlas_lookup`（查词条）与 `word_atlas_search`（按释义/级别/话题搜词）
 
 ## 安装
@@ -49,6 +52,15 @@ Host 半按以下顺序寻找本机素材：
 想获得完整离线体验，把 [词光仓库](https://github.com/designfuchen/word-atlas) 克隆到
 `../repo` 或配置 `contentDir` 即可。
 
+## 离线素材与点词查询
+
+- 词库文字（7,298 条）已内置，无需下载；
+- 插画与发音默认从官方站点按需加载；在「我的 → 离线素材」可下载
+  **缩略图 84 MB / 完整插画 199 MB / 发音 418 MB**（共 37,501 个文件，约 701 MB），
+  下载中即可生效，支持取消、续传与删除；
+- 若检测到本机词光仓库（`contentDir`），可直接从本地导入，完全离线；
+- 例句中的英文词点击即查，浮窗可播放发音、打开词卡。
+
 ## Agent 工具
 
 | 工具 | 用途 |
@@ -67,6 +79,10 @@ Host 半按以下顺序寻找本机素材：
     mediaBase: https://0xlei.tech/words/   # 可选，官方素材根地址
     stateFile: /path/to/progress.json      # 可选，默认 $DSH_HOME/word-atlas-dsh/progress.json
     tools: true                            # 可选，false 时不注册 Agent 工具
+    offlineDir: /path/to/offline           # 可选，离线素材目录（默认 $DSH_HOME/word-atlas-dsh/content）
+    cacheDir: /path/to/cache               # 可选，按需缓存目录（默认 $DSH_HOME/word-atlas-dsh/cache）
+    autoCache: false                       # 可选，浏览时自动缓存媒体（默认 false）
+    cacheMaxBytes: 1073741824              # 可选，按需缓存上限（默认 1 GiB，超出按时间 LRU 清理）
 ```
 
 ## HTTP 路由（同源，页面内使用）
@@ -98,7 +114,7 @@ Host 半按以下顺序寻找本机素材：
 
 开发计划用 GitHub Issues + Milestones 跟踪，按 SemVer 发布：
 
-- **v0.2.0** — 例句点词查询浮窗（#4）、离线素材包（#5）、设置页/备份导入（#6）
+- ✅ **v0.2.0** — 例句点词查询浮窗（#4）、离线素材包（#5）、设置页/备份导入（#6）
 - **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 我的/统计（#9）
 - **v0.4.0** — Practice 打字练习（#10）、Galaxy 星图（#11）、分享卡/命令面板（#12）
 - 实现原则与复刻来源索引见 tracking issue #1：优先移植/复用上游 MIT 源码，
