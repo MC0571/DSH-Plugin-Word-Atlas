@@ -4049,11 +4049,28 @@
 }
 
 .wa-typing-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+  width: min(100%, 720px);
+  margin-top: 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--wa-line);
+  border-radius: 10px;
+  outline: none;
+  background: var(--wa-surface-2);
+  color: var(--dsw-alias-label-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 16px;
+  text-align: center;
+}
+
+.wa-typing-input:focus {
+  border-color: var(--dsw-alias-brand-primary);
+}
+
+.wa-typing-text span.is-space {
+  display: inline-block;
+  width: 0.45em;
+  border-bottom: 1px dashed color-mix(in srgb, var(--dsw-alias-label-primary) 22%, transparent);
+  color: transparent;
 }
 
 .wa-typing-help {

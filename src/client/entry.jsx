@@ -7,6 +7,7 @@ import { WordGrid } from './Browse.jsx'
 import { Settings } from './Settings.jsx'
 import { createLookupIndex, candidateBases } from './lookup.js'
 import { detectTitlebar } from './titlebar.js'
+import { compact } from './typing.js'
 import { Practice } from './Practice.jsx'
 import { GalaxyView } from './Galaxy.jsx'
 import { Palette } from './Palette.jsx'
@@ -59,6 +60,7 @@ export const __test = {
   createLookupIndex,
   candidateBases,
   detectTitlebar,
+  compact,
   Practice,
   GalaxyView,
   Palette,
