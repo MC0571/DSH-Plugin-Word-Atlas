@@ -108,6 +108,7 @@ function OfflinePanel({ offline, refresh }) {
   const total = offline?.total ?? 0;
   const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
   const ready = offline?.state === "done" || (offline?.done ?? 0) > 0;
+  const usingRepo = Boolean(offline?.contentDirReady);
 
   return (
     <section className="wa-panel">
@@ -118,10 +119,12 @@ function OfflinePanel({ offline, refresh }) {
       </p>
 
       <div className="wa-offline-source">
-        <span className={`wa-dot ${ready ? "is-on" : ""}`} />
-        {ready
-          ? `离线包：${formatBytes(offline?.bytes ?? 0)}（${done.toLocaleString("en-US")}${total ? ` / ${total.toLocaleString("en-US")}` : ""} 个文件）`
-          : "官方站点按需加载（首次看图/听音需要联网）"}
+        <span className={`wa-dot ${usingRepo || ready ? "is-on" : ""}`} />
+        {usingRepo
+          ? `本机词光仓库：${offline?.contentDir}`
+          : ready
+            ? `离线包：${formatBytes(offline?.bytes ?? 0)}（${done.toLocaleString("en-US")}${total ? ` / ${total.toLocaleString("en-US")}` : ""} 个文件）`
+            : "官方站点按需加载（首次看图/听音需要联网）"}
         {offline?.autoCache ? " · 按需缓存已开启" : ""}
       </div>
       {offline?.dir ? <p className="wa-panel-path">保存位置：{offline.dir}</p> : null}
@@ -201,7 +204,7 @@ function OfflinePanel({ offline, refresh }) {
       {error ? <p className="wa-error-text">{error}</p> : null}
       <p className="wa-panel-note">
         下载源：官方站点（CC BY 4.0 素材）或本机词光仓库；界面音效不在离线包内。
-        按需缓存可在 profile 的 `cordis.patch.yml` 中设置 `autoCache: true`。
+        按需缓存可在 profile 的 <code>cordis.patch.yml</code> 中设置 <code>autoCache: true</code>。
       </p>
     </section>
   );

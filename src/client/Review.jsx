@@ -119,7 +119,9 @@ function ReviewIntro({ atlas, progress, onStart }) {
           <Icon name="check" size={15} /> 都复习完了，去图鉴里认识几个新词吧。
         </p>
       ) : null}
-      <p className="wa-review-tip">复习进度会自动保存到本机 `$DSH_HOME/word-atlas-dsh/progress.json`。</p>
+      <p className="wa-review-tip">
+        复习进度会自动保存到本机 <code>$DSH_HOME/word-atlas-dsh/progress.json</code>。
+      </p>
     </div>
   )
 }
