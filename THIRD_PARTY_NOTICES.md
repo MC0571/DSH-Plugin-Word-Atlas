@@ -13,6 +13,11 @@
 
 使用时请保留以上署名。本插件不修改词条内容，仅做展示与复习调度。
 
+本插件的 `Practice.jsx`、`typing.js`、`galaxy/`（layout / engine / Galaxy）以及
+会话与文本工具的一部分，移植自原项目的 MIT 代码（`src/pages/Practice.tsx`、
+`src/lib/typing.ts`、`src/galaxy/*`、`src/pages/Learn.tsx`、`src/store/session.ts` 等），
+已保留原始署名并做 DSH 适配。
+
 ## 图标
 
 - **Lucide**（`lucide-static` v1.63.0）— ISC License — <https://lucide.dev>
