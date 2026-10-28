@@ -5011,7 +5011,7 @@
 .wa-book-bar {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) 100px;
+  grid-template-columns: 100px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-height: 56px;
@@ -6024,7 +6024,7 @@
   }
 
   .wa-book-bar {
-    grid-template-columns: 72px minmax(0, 1fr) 72px;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
     padding: 0 10px;
   }
 
@@ -6116,6 +6116,8 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .wa-book-listen {
@@ -6228,6 +6230,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 5px 8px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -6286,4 +6290,19 @@
   .wa-book-tool span {
     display: none;
   }
+}
+
+.wa-book-pop-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wa-book-pop-actions .wa-btn {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.wa-book-pop-fav.is-on {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent);
+  color: var(--dsw-alias-state-error-primary);
 }

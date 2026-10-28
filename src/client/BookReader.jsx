@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { audioUrl, hasMedia, loadEntry, MEDIA, readAssetUrl } from './data.js'
+import { getLookupIndex } from './lookup.js'
 import { loadBookChapter } from './readings.js'
 import { update } from './store.js'
 import {
@@ -28,7 +29,7 @@ function WordButton({ word, onWord }) {
       className={`wa-book-word ${word.freq >= 2 ? 'is-marked' : ''}`}
       onClick={(event) => {
         event.stopPropagation()
-        onWord(word.id, event)
+        onWord(word.id || null, word.text, event)
       }}
       aria-label={`查看 ${word.text} 的释义`}
     >
@@ -50,14 +51,28 @@ function Sentence({ paragraph, index, text, lang, activeId, audioLang, onWord, o
       data-sentence={domId}
       onClick={playable ? () => onPlay(paragraph.id, index, lang) : undefined}
     >
-      {parts.map((part, partIndex) => {
-        if (!part.id) return <React.Fragment key={partIndex}>{part.text}</React.Fragment>
-        if (lookupMode) return <WordButton key={partIndex} word={part} onWord={onWord} />
-        return (
-          <span key={partIndex} className={`wa-book-mark ${part.freq >= 2 ? 'is-marked' : ''}`}>
-            {part.text}
-          </span>
-        )
+      {parts.flatMap((part, partIndex) => {
+        if (part.id) {
+          if (lookupMode) return [<WordButton key={partIndex} word={part} onWord={onWord} />]
+          return [
+            <span key={partIndex} className={`wa-book-mark ${part.freq >= 2 ? 'is-marked' : ''}`}>
+              {part.text}
+            </span>,
+          ]
+        }
+        if (!lookupMode) return [<React.Fragment key={partIndex}>{part.text}</React.Fragment>]
+        const nodes = []
+        const pattern = /[A-Za-zÀ-ÿ]+(?:['’-][A-Za-zÀ-ÿ]+)*/g
+        let last = 0
+        let match = pattern.exec(part.text)
+        while (match) {
+          if (match.index > last) nodes.push(<React.Fragment key={`${partIndex}-${last}`}>{part.text.slice(last, match.index)}</React.Fragment>)
+          nodes.push(<WordButton key={`${partIndex}-${match.index}`} word={{ text: match[0], id: null, freq: 0 }} onWord={onWord} />)
+          last = match.index + match[0].length
+          match = pattern.exec(part.text)
+        }
+        if (last < part.text.length) nodes.push(<React.Fragment key={`${partIndex}-tail`}>{part.text.slice(last)}</React.Fragment>)
+        return nodes
       })}
     </span>
   )
@@ -115,10 +130,15 @@ function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay, looku
   )
 }
 
-function WordPopover({ atlas, id, x, y, accent, onClose, onOpenWord }) {
-  const [state, setState] = useState({ status: 'loading', entry: null, error: '' })
+function WordPopover({ atlas, id, surface, x, y, accent, bookmarked, onToggleBookmark, onClose, onOpenWord }) {
+  const [state, setState] = useState({ status: id ? 'loading' : 'missing', entry: null, error: '' })
   useEffect(() => {
+    if (!id) {
+      setState({ status: 'missing', entry: null, error: '' })
+      return undefined
+    }
     let alive = true
+    setState({ status: 'loading', entry: null, error: '' })
     loadEntry(atlas, id)
       .then((entry) => alive && setState({ status: 'ready', entry, error: '' }))
       .catch((error) => alive && setState({ status: 'error', entry: null, error: error.message || '查不到这个词。' }))
@@ -138,8 +158,19 @@ function WordPopover({ atlas, id, x, y, accent, onClose, onOpenWord }) {
         <button type="button" className="wa-book-pop-close" onClick={onClose} aria-label="关闭">
           <Icon name="close" size={16} />
         </button>
+        {state.status === 'missing' ? (
+          <>
+            <h2 lang="en">{surface}</h2>
+            <p className="wa-panel-note">词库暂未收录这个词。</p>
+          </>
+        ) : null}
         {state.status === 'loading' ? <Spinner label="正在查词…" /> : null}
-        {state.status === 'error' ? <p className="wa-panel-note">{state.error}</p> : null}
+        {state.status === 'error' ? (
+          <>
+            <h2 lang="en">{surface || id}</h2>
+            <p className="wa-panel-note">{state.error}</p>
+          </>
+        ) : null}
         {entry ? (
           <>
             <h2 lang="en">{entry.w}</h2>
@@ -165,7 +196,10 @@ function WordPopover({ atlas, id, x, y, accent, onClose, onOpenWord }) {
               ))}
             </div>
             <div className="wa-book-pop-actions">
-              <button type="button" className="wa-btn wa-btn-primary" onClick={() => { onClose(); onOpenWord(id) }}>
+              <button type="button" className={`wa-btn wa-btn-ghost wa-book-pop-fav ${bookmarked ? 'is-on' : ''}`} onClick={onToggleBookmark}>
+                <Icon name="heart" size={15} filled={bookmarked} /> {bookmarked ? '已收藏' : '收藏'}
+              </button>
+              <button type="button" className="wa-btn wa-btn-primary" onClick={() => { onClose(); onOpenWord(entry.id) }}>
                 查看词卡 <Icon name="chevronRight" size={15} />
               </button>
             </div>
@@ -194,6 +228,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const scrollRef = useRef(null)
   const activeRef = useRef(-1)
   const loadToken = useRef(0)
+  const lookupIndex = useMemo(() => (atlas?.words?.length ? getLookupIndex(atlas) : null), [atlas])
   const savedRef = useRef({ at: 0, pid: '', pct: 0 })
 
   const chapter = chapterState.status === 'ready' ? chapterState.data : null
@@ -213,6 +248,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const queue = useMemo(() => (chapter ? buildSentenceQueue(chapter, language) : []), [chapter, language])
   const activeItem = active >= 0 ? queue[active] : null
   const activeSentenceId = activeItem?.domId || ''
+  const bookmarks = Array.isArray(progress.bookmarks) ? progress.bookmarks : []
   const isDone = Boolean(progress.readings?.[chapterKey(book.id, meta.n)]?.done)
 
   useEffect(() => {
@@ -500,13 +536,28 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
 
   const updatePrefs = (patch) => setPrefs((current) => normalizeReaderPrefs({ ...current, ...patch }))
 
-  const openWord = (id, event) => {
+  const openWord = (id, surface, event) => {
     if (audioRef.current && !audioRef.current.paused) audioRef.current.pause()
+    const resolved = id || (surface ? lookupIndex?.resolve(surface) : null)
     const rect = event?.currentTarget?.getBoundingClientRect?.()
     setWord({
-      id,
+      id: resolved || null,
+      surface: surface || id || '',
       x: rect ? Math.min(rect.left, (window.innerWidth || 0) - 340) : 40,
       y: rect ? Math.min(rect.bottom + 8, (window.innerHeight || 0) - 300) : 80,
+    })
+  }
+
+  const toggleWordBookmark = () => {
+    const id = word?.id
+    if (!id) return
+    update((state) => {
+      const list = Array.isArray(state.bookmarks) ? state.bookmarks : []
+      const exists = list.includes(id)
+      return {
+        ...state,
+        bookmarks: exists ? list.filter((item) => item !== id) : [...list, id],
+      }
     })
   }
 
@@ -839,9 +890,12 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
         <WordPopover
           atlas={atlas}
           id={word.id}
+          surface={word.surface}
           x={word.x}
           y={word.y}
           accent={progress.settings.accent}
+          bookmarked={word.id ? bookmarks.includes(word.id) : false}
+          onToggleBookmark={toggleWordBookmark}
           onClose={() => setWord(null)}
           onOpenWord={onOpenWord}
         />
