@@ -264,6 +264,8 @@ assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIn
 assert.equal(testSurface.detectTitlebar({ protocol: 'http:', platform: 'MacIntel', left: 0, top: 0 }), false)
 assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIntel', left: 280, top: 0 }), false)
 assert.equal(testSurface.detectTitlebar({ protocol: 'dsh-app:', platform: 'MacIntel', left: 0, top: 0, fullscreen: true }), false)
+assert.equal(testSurface.compact('My grandmother has an excellent memory.'), testSurface.compact('Mygrandmother has an excellentmemory.'))
+assert.equal(testSurface.compact('My grandmother'), testSurface.compact('My  grandmother'))
 const clientSource = readFileSync(join(root, 'client.js'), 'utf8')
 assert.ok(clientSource.includes('.wa-root .wa-btn-primary'), 'primary button text must not be overridden by the base button rule')
 assert.ok(clientSource.includes('var(--dsw-alias-bg-base)'), 'primary button text must follow the host base color')

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { audioUrl, brandUrl, hasMedia, loadEntry, MEDIA } from './data.js'
 import { hashSeed, shuffle } from './lookup.js'
 import { update } from './store.js'
-import { clean, correctCharacterCount, same, typingDelta, typingMetrics } from './typing.js'
+import { clean, compact, correctCharacterCount, same, typingDelta, typingMetrics } from './typing.js'
 import { Icon, WordImage, playAudio, stopAllAudio } from './ui.jsx'
 
 const MODES = [
@@ -187,9 +187,11 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
 
   useEffect(() => () => stopAllAudio(), [])
 
+  const compareTarget = mode === 'word' ? clean(target) : compact(target)
+
   const finish = (final) => {
     const elapsed = started.current ? performance.now() - started.current : 0
-    const accepted = correctCharacterCount(final, target)
+    const accepted = correctCharacterCount(mode === 'word' ? clean(final) : compact(final), compareTarget)
     const nextTotals = {
       ...totals.current,
       accepted: totals.current.accepted + accepted,
@@ -212,7 +214,9 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
   const onChange = (next) => {
     if (done) return
     if (started.current === null && next) started.current = performance.now()
-    const delta = typingDelta(value, next, target)
+    const previous = mode === 'word' ? clean(value) : compact(value)
+    const current = mode === 'word' ? clean(next) : compact(next)
+    const delta = typingDelta(previous, current, compareTarget)
     const nextTotals = {
       ...totals.current,
       typed: totals.current.typed + delta.total,
@@ -221,7 +225,7 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
     totals.current = nextTotals
     setMetrics(typingMetrics(nextTotals.correct, nextTotals.typed, nextTotals.accepted, nextTotals.ms))
     setValue(next)
-    if (clean(next).length >= clean(target).length && same(next.trimEnd(), target)) finish(next)
+    if (current.length >= compareTarget.length && same(current, compareTarget)) finish(next)
   }
 
   if (done) {
@@ -249,7 +253,8 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
   }
 
   const chars = Array.from(target)
-  const typed = Array.from(value)
+  const typedChars = Array.from(clean(value)).filter((character) => !/\s/.test(character))
+  let typedIndex = -1
   const progressPercent = entries.length ? Math.round((index / entries.length) * 100) : 0
 
   return (
@@ -287,16 +292,17 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
 
         <p className={`wa-typing-text ${mode === 'word' ? 'is-word' : ''} ${mode === 'dictation' ? 'is-hidden' : ''}`} lang="en" aria-hidden="true">
           {chars.map((character, position) => {
-            const typedCharacter = typed[position]
-            const state = typedCharacter === undefined ? (position === typed.length ? 'is-caret' : '') : same(typedCharacter, character) ? 'is-ok' : 'is-bad'
-            const shown =
-              mode === 'dictation' && typedCharacter === undefined
-                ? character === ' '
-                  ? ' '
-                  : /[A-Za-z]/.test(character)
-                    ? '·'
-                    : character
-                : character
+            if (/\s/.test(character)) {
+              return (
+                <span key={position} className="is-space" aria-hidden="true">
+                  {'\u00a0'}
+                </span>
+              )
+            }
+            typedIndex += 1
+            const typedCharacter = typedChars[typedIndex]
+            const state = typedCharacter === undefined ? (typedIndex === typedChars.length ? 'is-caret' : '') : same(typedCharacter, character) ? 'is-ok' : 'is-bad'
+            const shown = mode === 'dictation' && typedCharacter === undefined ? (/[A-Za-z]/.test(character) ? '·' : character) : character
             return (
               <span key={position} className={state}>
                 {shown}
@@ -315,10 +321,13 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
           autoCorrect="off"
           autoComplete="off"
           spellCheck={false}
+          placeholder="在这里输入…"
           aria-label="在这里输入"
         />
         <p className="wa-panel-note wa-typing-help">
-          {mode === 'dictation' ? '听不清可以点「再听一遍」。' : '直接开始输入，全部正确后自动进入下一项。'} 第 {index + 1}/{entries.length} 项
+          {mode === 'dictation' ? '听不清可以点「再听一遍」。' : '直接开始输入，全部正确后自动进入下一项。'}
+          {mode === 'word' ? null : ' 空格不参与判分（输入法吞掉空格也没关系），句中虚线下划线表示空格。'}
+          {' '}第 {index + 1}/{entries.length} 项
         </p>
       </section>
     </div>

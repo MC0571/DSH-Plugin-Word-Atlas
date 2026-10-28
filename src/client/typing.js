@@ -9,6 +9,9 @@ export const clean = (text) =>
 
 export const same = (a, b) => clean(a).toLowerCase() === clean(b).toLowerCase()
 
+/** 句子练习忽略空白：中文/日文输入法可能吞掉空格，不应因此判错。 */
+export const compact = (text) => clean(text).replace(/\s+/g, '')
+
 export function correctCharacterCount(value, target) {
   const expected = Array.from(clean(target))
   return Array.from(clean(value)).filter((character, index) => same(character, expected[index] || '')).length
