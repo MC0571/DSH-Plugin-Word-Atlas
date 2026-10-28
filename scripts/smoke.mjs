@@ -241,6 +241,7 @@ const clientSource = readFileSync(join(root, 'client.js'), 'utf8')
 assert.ok(clientSource.includes('.wa-root .wa-btn-primary'), 'primary button text must not be overridden by the base button rule')
 assert.ok(clientSource.includes('var(--dsw-alias-bg-base)'), 'primary button text must follow the host base color')
 assert.ok(clientSource.includes('wa-detail-scroll'), 'detail body must have an inner scroll region with a fixed footer')
+assert.ok(clientSource.includes('corner-shape: round'), 'plugin must restore round corners against the host squircle design language')
 console.log('client: module shape, slot registrations, lookup and view renders OK')
 
 /* ------------------------------------------------------------------ host */
