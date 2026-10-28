@@ -99,3 +99,50 @@ export function getLookupIndex(atlas) {
   }
   return index
 }
+
+/* ------------------------------------------------------- text helpers */
+
+export const normalize = (value) =>
+  String(value || '')
+    .normalize('NFKC')
+    .replace(/[’‘]/g, "'")
+    .replace(/[‐‑–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+
+export function hashSeed(value) {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619)
+  return hash >>> 0
+}
+
+export function shuffle(list, seed = Math.random() * 2 ** 31) {
+  const out = [...list]
+  let state = Math.floor(seed) || 1
+  for (let index = out.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0
+    const swap = state % (index + 1)
+    ;[out[index], out[swap]] = [out[swap], out[index]]
+  }
+  return out
+}
+
+/** Find the headword (or an inflected form) inside an example sentence. */
+export function headwordPattern(word) {
+  const base = word.trim().toLowerCase()
+  const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (/\s/.test(base)) return new RegExp(`(?<![A-Za-z])(${base.split(/\s+/).map(escape).join('\\s+')})(?![A-Za-z])`, 'i')
+  const irregular = IRREGULAR.get(base)
+  if (irregular) return new RegExp(`(?<![A-Za-z])((?:${[base, ...irregular].map(escape).join('|')})[a-z]{0,3})(?![A-Za-z])`, 'i')
+  let stem = base
+  if (base.length > 3 && /[^aeiou]y$|e$/.test(base)) stem = base.slice(0, -1)
+  const double = /[^aeiou][aeiou][bdgmnprt]$/.test(base) ? `${escape(base.slice(-1))}?` : ''
+  return new RegExp(`(?<![A-Za-z])(${escape(stem)}${double}[a-z]{0,4})(?![A-Za-z])`, 'i')
+}
+
+export function gap(sentence, word) {
+  const match = headwordPattern(word).exec(sentence)
+  if (!match) return null
+  return { before: sentence.slice(0, match.index), hidden: match[0], after: sentence.slice(match.index + match[0].length) }
+}

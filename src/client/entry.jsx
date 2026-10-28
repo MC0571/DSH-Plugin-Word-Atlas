@@ -7,6 +7,17 @@ import { WordGrid } from './Browse.jsx'
 import { Settings } from './Settings.jsx'
 import { createLookupIndex, candidateBases } from './lookup.js'
 import { LookupText } from './LookupText.jsx'
+import { Today } from './Today.jsx'
+import { Learn } from './Learn.jsx'
+import {
+  buildSession,
+  answer as answerSession,
+  advance as advanceSession,
+  gradeFor,
+  sessionStats,
+  todayPlan,
+  distractors,
+} from './session.js'
 
 const PLUGIN_ID = 'word-atlas-dsh'
 const PANEL_ID = 'word-atlas'
@@ -32,7 +43,19 @@ function PanelIcon({ size = 18, active = false }) {
 export const inject = ['slots']
 
 /** Internal surface for the development smoke test; not part of the client API. */
-export const __test = { App, DetailModal, ReviewView, WordGrid, Settings, LookupText, createLookupIndex, candidateBases }
+export const __test = {
+  App,
+  DetailModal,
+  ReviewView,
+  WordGrid,
+  Settings,
+  LookupText,
+  Today,
+  Learn,
+  createLookupIndex,
+  candidateBases,
+  session: { buildSession, answerSession, advanceSession, gradeFor, sessionStats, todayPlan, distractors },
+}
 
 export function apply(ctx) {
   if (typeof document !== 'undefined') {

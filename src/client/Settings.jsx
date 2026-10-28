@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { exportBackup, importBackup, resetProgress, update } from "./store.js";
-import { Icon } from "./ui.jsx";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isMastered } from "./fsrs.js";
+import { dayKey, exportBackup, importBackup, resetProgress, streak, update } from "./store.js";
+import { Icon, WordImage } from "./ui.jsx";
 
 const OFFLINE_API = "/word-atlas/api/offline";
 const TIERS = [
@@ -210,7 +211,60 @@ function OfflinePanel({ offline, refresh }) {
   );
 }
 
-export function Settings({ atlas, progress }) {
+const LEVEL_LABEL = ["入门", "基础", "进阶", "中高", "高级", "精通"];
+
+function Heatmap({ days }) {
+  const weeks = 20;
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - (weeks * 7 - 1) - end.getDay());
+  const cells = [];
+  const cursor = new Date(start);
+  for (let index = 0; index < (weeks + 1) * 7; index += 1) {
+    const key = dayKey(cursor);
+    cells.push({ key, value: days[key]?.r ?? 0, future: cursor > end });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  const level = (value) => (value === 0 ? 0 : value < 10 ? 1 : value < 25 ? 2 : value < 50 ? 3 : 4);
+  return (
+    <div className="wa-heatmap" role="img" aria-label="学习热力图">
+      {cells.map((cell) => (
+        <span key={cell.key} className={`wa-heat-${cell.future ? "x" : level(cell.value)}`} title={`${cell.key} · ${cell.value} 题`} />
+      ))}
+    </div>
+  );
+}
+
+export function Settings({ atlas, progress, onOpenWord }) {
+  const stats = useMemo(() => {
+    const cards = Object.values(progress.cards);
+    const days = Object.values(progress.days);
+    const reviewed = days.reduce((sum, day) => sum + (day.r || 0), 0);
+    const correct = days.reduce((sum, day) => sum + (day.c || 0), 0);
+    const seconds = days.reduce((sum, day) => sum + (day.t || 0), 0);
+    const forecast = Array.from({ length: 7 }, (_, index) => {
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+      end.setDate(end.getDate() + index);
+      const start = new Date(end);
+      start.setHours(0, 0, 0, 0);
+      return cards.filter((card) => (index === 0 ? card.due <= end.getTime() : card.due >= start.getTime() && card.due <= end.getTime())).length;
+    });
+    return {
+      learned: cards.length,
+      mastered: cards.filter(isMastered).length,
+      reviews: reviewed,
+      accuracy: reviewed ? Math.round((correct / reviewed) * 100) : 0,
+      minutes: Math.round(seconds / 60),
+      streakDays: streak(progress.days),
+      forecast,
+    };
+  }, [progress]);
+  const mistakes = useMemo(() => {
+    if (!atlas) return [];
+    return progress.mistakes.map((id) => atlas.byId.get(id)).filter(Boolean).slice(0, 24);
+  }, [atlas, progress.mistakes]);
+  const maxForecast = Math.max(1, ...stats.forecast);
   const [offline, setOffline] = useState(null);
   const [offlineError, setOfflineError] = useState("");
   const [notice, setNotice] = useState("");
@@ -260,6 +314,72 @@ export function Settings({ atlas, progress }) {
 
   return (
     <div className="wa-settings">
+      <section className="wa-me-strip">
+        <div className="wa-me-stat">
+          <strong>{stats.streakDays}</strong>
+          <span>连续学习 · 天</span>
+        </div>
+        <div className="wa-me-stat">
+          <strong>{stats.learned.toLocaleString("en-US")}</strong>
+          <span>已点亮</span>
+        </div>
+        <div className="wa-me-stat">
+          <strong>{stats.mastered.toLocaleString("en-US")}</strong>
+          <span>长期记住</span>
+        </div>
+        <div className="wa-me-stat">
+          <strong>{stats.accuracy}%</strong>
+          <span>首次正确率</span>
+        </div>
+        <div className="wa-me-stat">
+          <strong>{stats.minutes}</strong>
+          <span>学习分钟</span>
+        </div>
+      </section>
+
+      <div className="wa-me-grid">
+        <section className="wa-panel">
+          <h3 className="wa-eyebrow">过去 20 周</h3>
+          <Heatmap days={progress.days} />
+          <p className="wa-panel-note">一格是一天，颜色越深，那天答得越多。「长期记住」指记忆稳定度超过 21 天。</p>
+        </section>
+        <section className="wa-panel">
+          <h3 className="wa-eyebrow">未来 7 天的复习量</h3>
+          <ol className="wa-forecast">
+            {stats.forecast.map((count, index) => (
+              <li key={index}>
+                <span style={{ height: `${Math.max(6, Math.round((count / maxForecast) * 100))}%` }} />
+                <b>{count}</b>
+                <small>{index === 0 ? "今天" : index === 1 ? "明天" : `+${index}`}</small>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+
+      {mistakes.length > 0 ? (
+        <section className="wa-panel">
+          <div className="wa-panel-head">
+            <h3 className="wa-eyebrow">错词本</h3>
+            <span className="wa-muted">最近 {mistakes.length} 个</span>
+          </div>
+          <ul className="wa-mistakes">
+            {mistakes.map((word) => (
+              <li key={word.id}>
+                <button type="button" onClick={() => onOpenWord(word.id)} aria-label={`查看 ${word.word}`}>
+                  <WordImage id={word.id} word={word.word} className="wa-mistake-thumb" />
+                  <span>
+                    <b lang="en">{word.word}</b>
+                    <small>{word.zh}</small>
+                  </span>
+                  <em>{word.cefr}</em>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="wa-panel">
         <h3 className="wa-eyebrow">学习设置</h3>
         <div className="wa-field">
@@ -277,7 +397,7 @@ export function Settings({ atlas, progress }) {
         <div className="wa-field">
           <div>
             <b>从哪个难度开始</b>
-            <small>学习会话会跳过更简单的级别（v0.3 生效）。</small>
+            <small>学习会话会跳过更简单的级别。</small>
           </div>
           <Segmented
             ariaLabel="起点难度"
@@ -315,13 +435,13 @@ export function Settings({ atlas, progress }) {
         </div>
         <Switch
           label="自动播放发音"
-          hint="学习会话上线后生效"
+          hint="词卡与听音题自动播放"
           on={settings.autoplay}
           onChange={(value) => patch({ autoplay: value })}
         />
         <Switch
           label="复习时加入拼写题"
-          hint="学习会话上线后生效"
+          hint="学习会话中加入拼写题"
           on={settings.spell}
           onChange={(value) => patch({ spell: value })}
         />
@@ -376,7 +496,7 @@ export function Settings({ atlas, progress }) {
       <section className="wa-panel">
         <h3 className="wa-eyebrow">关于</h3>
         <p className="wa-panel-hint">
-          词光 · Word Atlas DSH 插件 v0.2.0 · 词库/插画/录音来自{" "}
+          词光 · Word Atlas DSH 插件 v0.3.0 · 词库/插画/录音来自{" "}
           <a href="https://github.com/designfuchen/word-atlas" target="_blank" rel="noreferrer">
             designfuchen/word-atlas
           </a>
