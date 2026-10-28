@@ -260,6 +260,10 @@ export function App() {
               setCefr(level)
               setView('atlas')
             }}
+            onOpenTopic={(slug) => {
+              setTopic(slug)
+              setView('atlas')
+            }}
           />
         ) : view === 'review' ? (
           <ReviewView atlas={atlas} progress={progress} onExit={() => setView('today')} onOpenWord={pushWord} />
