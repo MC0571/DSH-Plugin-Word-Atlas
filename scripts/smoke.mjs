@@ -173,6 +173,9 @@ assert.equal(lookup.resolve('studied'), 'study')
 assert.equal(lookup.resolve('children'), 'child')
 assert.equal(lookup.resolve('zzzzzz'), null)
 assert.deepEqual(testSurface.candidateBases('running').includes('run'), true)
+const clientSource = readFileSync(join(root, 'client.js'), 'utf8')
+assert.ok(clientSource.includes('.wa-root .wa-btn-primary'), 'primary button text must not be overridden by the base button rule')
+assert.ok(clientSource.includes('var(--dsw-alias-bg-base)'), 'primary button text must follow the host base color')
 console.log('client: module shape, slot registrations, lookup and view renders OK')
 
 /* ------------------------------------------------------------------ host */

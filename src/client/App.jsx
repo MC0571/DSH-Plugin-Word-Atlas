@@ -191,7 +191,7 @@ export function App() {
           <EmptyState icon="info" title="词库还没准备好">
             <p>{error}</p>
             <p className="wa-about-note">
-              请确认 word-atlas 插件已启用、Host 路由 `/word-atlas/health` 可访问；如果插件刚安装，刷新页面再试。
+              请确认 word-atlas 插件已启用、Host 路由 <code>/word-atlas/health</code> 可访问；如果插件刚安装，刷新页面再试。
             </p>
           </EmptyState>
         ) : !atlas ? (

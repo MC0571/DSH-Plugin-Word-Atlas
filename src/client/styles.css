@@ -36,7 +36,6 @@
 .wa-root select {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
 }
 
 .wa-root img {
@@ -210,7 +209,11 @@
 .wa-btn-primary {
   border-color: transparent;
   background: var(--dsw-alias-brand-primary);
-  color: #fff;
+  color: var(--dsw-alias-bg-base);
+}
+
+.wa-root .wa-btn-primary {
+  color: var(--dsw-alias-bg-base);
 }
 
 .wa-btn-primary:hover:not(:disabled) {
@@ -317,7 +320,7 @@
   justify-content: center;
   border-radius: var(--wa-round);
   background: var(--dsw-alias-brand-primary);
-  color: #fff;
+  color: var(--dsw-alias-bg-base);
   font-size: 11px;
   font-weight: 700;
 }
