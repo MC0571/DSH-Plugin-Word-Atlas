@@ -191,8 +191,6 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
 
   const chapter = chapterState.status === 'ready' ? chapterState.data : null
 
-  const activeItem = active >= 0 ? queue[active] : null
-  const activeSentenceId = activeItem?.domId || ''
   const wordIds = useMemo(() => (chapter ? chapterWordIds(chapter) : []), [chapter])
   const wordChips = useMemo(
     () => wordIds.slice(0, 30).map((id) => atlas.byId.get(id)).filter(Boolean),
@@ -206,6 +204,8 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   }, [chapter])
   const language = prefs.language === 'zh' && !narration.zh ? 'en' : prefs.language === 'en' && !narration.en ? 'zh' : prefs.language
   const queue = useMemo(() => (chapter ? buildSentenceQueue(chapter, language) : []), [chapter, language])
+  const activeItem = active >= 0 ? queue[active] : null
+  const activeSentenceId = activeItem?.domId || ''
   const isDone = Boolean(progress.readings?.[chapterKey(book.id, meta.n)]?.done)
 
   useEffect(() => {
