@@ -321,7 +321,6 @@ function TypingRound({ atlas, progress, mode, entries, onExit, onAgain }) {
           autoCorrect="off"
           autoComplete="off"
           spellCheck={false}
-          placeholder="在这里输入…"
           aria-label="在这里输入"
         />
         <p className="wa-panel-note wa-typing-help">
