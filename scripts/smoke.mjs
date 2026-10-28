@@ -246,6 +246,50 @@ assert.ok(html.includes('书房'))
 assert.ok(html.includes('短文'))
 assert.ok(html.includes('书架'))
 
+const readerChapter = {
+  paras: [
+    {
+      id: 'p1',
+      kind: 'p',
+      en: 'Hello world. Second sentence.',
+      zh: '你好，世界。第二句。',
+      sents: [{ a: 0, b: 12, t0: 0, t1: 1 }, { a: 13, b: 29, t0: 1.2, t1: 2.4 }],
+      zhSents: [{ a: 0, b: 6, t0: 0, t1: 1 }, { a: 6, b: 10, t0: 1.2, t1: 2.4 }],
+      words: [[0, 5, 'hello', 3], [6, 11, 'world', 2]],
+      audio: 'books/test/audio/1/p1.mp3',
+      audioZh: 'books/test/audio-zh/1/p1.mp3',
+    },
+  ],
+}
+const readerQueue = testSurface.buildSentenceQueue(readerChapter, 'en')
+assert.equal(readerQueue.length, 2)
+assert.equal(readerQueue[0].text, 'Hello world.')
+assert.equal(readerQueue[0].translation, '你好，世界。')
+assert.equal(testSurface.queueIndexAtTime(readerQueue, 0, 1.3), 1)
+assert.equal(testSurface.romanNumeral(27), 'XXVII')
+assert.equal(testSurface.chapterKey('the-little-prince', 1), 'book:the-little-prince:1')
+assert.equal(testSurface.positionKey('the-little-prince'), 'book:the-little-prince:pos')
+const parts = testSurface.splitSentenceParts('Hello world.', { a: 0, b: 12 }, [[0, 5, 'hello', 3], [6, 11, 'world', 2]])
+assert.equal(parts.length, 4)
+assert.equal(parts[0].id, 'hello')
+
+html = render(
+  React.createElement(testSurface.BookReader, {
+    atlas: fixtureAtlas,
+    progress: fixtureProgress,
+    book: { id: 'the-little-prince', titleZh: '小王子', title: 'The Little Prince', chapters: [{ n: 1, labelZh: '第一章', titleZh: '蟒蛇与帽子', ready: true }] },
+    meta: { n: 1, labelZh: '第一章', titleZh: '蟒蛇与帽子', minutes: 3, words: 500, plate: null },
+    restorePid: null,
+    onBack() {},
+    onOpenChapter() {},
+    onOpenWord() {},
+    onReaderFocus() {},
+  }),
+  'BookReader',
+)
+assert.ok(html.includes('wa-book-reader'))
+assert.ok(html.includes('正在打开书页'))
+
 html = render(
   React.createElement(testSurface.LookupText, {
     atlas: fixtureAtlas,
