@@ -12,34 +12,8 @@ import {
 } from './readings.js'
 import { update } from './store.js'
 import { BooksShelf } from './BookShelf.jsx'
+import { LookupText } from './LookupText.jsx'
 import { EmptyState, Icon, Spinner, playAudio, stopAllAudio } from './ui.jsx'
-
-function RichText({ text, onOpenWord }) {
-  const parts = []
-  const pattern = /\[\[([^\]|]+)\|([^\]]+)\]\]/g
-  let last = 0
-  let match = pattern.exec(text)
-  while (match) {
-    if (match.index > last) parts.push(text.slice(last, match.index))
-    parts.push({ id: match[1], label: match[2] })
-    last = match.index + match[0].length
-    match = pattern.exec(text)
-  }
-  if (last < text.length) parts.push(text.slice(last))
-  return (
-    <>
-      {parts.map((part, index) =>
-        typeof part === 'string' ? (
-          <React.Fragment key={index}>{part}</React.Fragment>
-        ) : (
-          <button key={index} type="button" className="wa-read-word" onClick={() => onOpenWord(part.id)}>
-            {part.label}
-          </button>
-        ),
-      )}
-    </>
-  )
-}
 
 export function ReadingPage({ atlas, progress, initialId, onOpenWord, onReaderFocus }) {
   const [tab, setTab] = useState('short')
@@ -244,7 +218,14 @@ function ShortReader({ atlas, item, progress, onOpenWord, onBack, onDone }) {
         <p className="wa-reader-subtitle" lang="en">{item.title}</p>
         {item.paras.map((paragraph, index) => (
           <section key={index} className="wa-reader-para">
-            <p lang="en"><RichText text={paragraph} onOpenWord={onOpenWord} /></p>
+            <p lang="en">
+              <LookupText
+                atlas={atlas}
+                progress={progress}
+                text={paragraph.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')}
+                onOpenWord={onOpenWord}
+              />
+            </p>
             {bilingual ? <p className="wa-reader-zh" lang="zh">{item.zh?.[index]}</p> : null}
           </section>
         ))}
