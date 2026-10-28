@@ -59,20 +59,32 @@ function useKeys(map) {
   }, [])
 }
 
-function LearnTop({ index, total, onExit }) {
+function LearnBar({ progress, value, total, count, onExit }) {
+  const percent = Math.round(Math.min(1, Math.max(0, progress)) * 100)
   return (
-    <header className="wa-learn-top">
-      <button type="button" className="wa-icon-btn" onClick={onExit} aria-label="暂停并返回">
-        <Icon name="close" size={20} />
-      </button>
-      <div className="wa-learn-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={index}>
-        <span style={{ width: `${total ? Math.round((index / total) * 100) : 0}%` }} />
+    <header className="wa-learn-bar">
+      <div className="wa-learn-bar-inner">
+        <button type="button" className="wa-btn wa-btn-ghost wa-learn-exit" onClick={onExit} aria-label="退出学习">
+          <Icon name="close" size={16} /> 退出
+        </button>
+        <div className="wa-learn-bar-center">
+          <span className="wa-learn-bar-title">今日学习</span>
+          <div className="wa-learn-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total || 1} aria-valuenow={value}>
+            <span style={{ width: `${percent}%` }} />
+          </div>
+        </div>
+        {count ? <span className="wa-learn-count">{count}</span> : null}
       </div>
-      <span className="wa-learn-count">
-        {index + 1}
-        <small>/{total}</small>
-      </span>
     </header>
+  )
+}
+
+function LearnShell({ bar, children, centered = false }) {
+  return (
+    <div className="wa-learn">
+      {bar}
+      <main className={`wa-learn-stage ${centered ? 'is-centered' : ''}`}>{children}</main>
+    </div>
   )
 }
 
@@ -506,32 +518,44 @@ export function Learn({ atlas, progress, onExit, onRestart, onOpenWord }) {
   const session = progress.session
   if (!session) {
     return (
-      <div className="wa-learn-empty">
+      <LearnShell bar={<LearnBar progress={0} value={0} total={1} count="" onExit={onExit} />} centered>
         <EmptyState icon="sparkle" title="今天没有待学的词">
           <p>可以先回顾图鉴，或者明天再来。</p>
           <button type="button" className="wa-btn wa-btn-primary" onClick={onExit}>
             返回今日
           </button>
         </EmptyState>
-      </div>
+      </LearnShell>
     )
   }
   if (session.finished || session.index >= session.steps.length) {
-    return <Summary atlas={atlas} progress={progress} session={session} onExit={onExit} onRestart={onRestart} onOpenWord={onOpenWord} />
+    return (
+      <LearnShell bar={<LearnBar progress={1} value={1} total={1} count="完成" onExit={onExit} />} centered>
+        <Summary atlas={atlas} progress={progress} session={session} onExit={onExit} onRestart={onRestart} onOpenWord={onOpenWord} />
+      </LearnShell>
+    )
   }
   const step = session.steps[session.index]
   const total = session.steps.length
   return (
-    <div className="wa-learn">
-      <LearnTop index={session.index} total={total} onExit={onExit} />
-      <main className="wa-learn-stage" key={`${session.id}-${session.index}`}>
-        {step.kind === 'intro' ? (
-          <Intro atlas={atlas} progress={progress} step={step} onOpenWord={onOpenWord} />
-        ) : (
-          <Quiz atlas={atlas} progress={progress} session={session} step={step} onOpenWord={onOpenWord} />
-        )}
-      </main>
-    </div>
+    <LearnShell
+      key={`${session.id}-${session.index}`}
+      bar={
+        <LearnBar
+          progress={session.index / total}
+          value={session.index}
+          total={total}
+          count={`${session.index + 1} / ${total}`}
+          onExit={onExit}
+        />
+      }
+    >
+      {step.kind === 'intro' ? (
+        <Intro atlas={atlas} progress={progress} step={step} onOpenWord={onOpenWord} />
+      ) : (
+        <Quiz atlas={atlas} progress={progress} session={session} step={step} onOpenWord={onOpenWord} />
+      )}
+    </LearnShell>
   )
 }
 

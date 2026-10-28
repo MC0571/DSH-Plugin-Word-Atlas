@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { loadAtlas } from './data.js'
 import { bumpDay, hydrate, streak, toggleBookmark as toggleBookmarkState, update, useProgress } from './store.js'
 import { Rating, review } from './fsrs.js'
@@ -10,6 +10,7 @@ import { Today } from './Today.jsx'
 import { Learn } from './Learn.jsx'
 import { Settings } from './Settings.jsx'
 import { Icon, Spinner, EmptyState } from './ui.jsx'
+import { useTitlebarInset } from './titlebar.js'
 
 const RATING_GOOD = Rating.Good
 
@@ -51,6 +52,8 @@ export function App() {
   const [topic, setTopic] = useState('all')
   const [detailStack, setDetailStack] = useState([])
   const progress = useProgress()
+  const rootRef = useRef(null)
+  useTitlebarInset(rootRef, view)
 
   useEffect(() => {
     hydrate()
@@ -168,7 +171,7 @@ export function App() {
 
   if (view === 'learn' && atlas) {
     return (
-      <div className="wa-root wa-root-focus">
+      <div className="wa-root wa-root-focus" ref={rootRef}>
         <Learn atlas={atlas} progress={progress} onExit={() => setView('today')} onRestart={startLearn} onOpenWord={pushWord} />
         {detailModal}
       </div>
@@ -176,7 +179,7 @@ export function App() {
   }
 
   return (
-    <div className="wa-root">
+    <div className="wa-root" ref={rootRef}>
       <header className="wa-header">
         <div className="wa-brand">
           <BrandMark />

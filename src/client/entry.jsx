@@ -6,6 +6,7 @@ import { ReviewView } from './Review.jsx'
 import { WordGrid } from './Browse.jsx'
 import { Settings } from './Settings.jsx'
 import { createLookupIndex, candidateBases } from './lookup.js'
+import { detectTitlebar } from './titlebar.js'
 import { LookupText } from './LookupText.jsx'
 import { Today } from './Today.jsx'
 import { Learn } from './Learn.jsx'
@@ -54,6 +55,7 @@ export const __test = {
   Learn,
   createLookupIndex,
   candidateBases,
+  detectTitlebar,
   session: { buildSession, answerSession, advanceSession, gradeFor, sessionStats, todayPlan, distractors },
 }
 
