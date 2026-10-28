@@ -94,6 +94,19 @@ Host 半按以下顺序寻找本机素材：
 
 词库内容同步自上游（CC BY 4.0），可用 `npm run sync-data` 从本机词光仓库重新生成 `data/`。
 
+## 路线图
+
+开发计划用 GitHub Issues + Milestones 跟踪，按 SemVer 发布：
+
+- **v0.2.0** — 例句点词查询浮窗（#4）、离线素材包（#5）、设置页/备份导入（#6）
+- **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 我的/统计（#9）
+- **v0.4.0** — Practice 打字练习（#10）、Galaxy 星图（#11）、分享卡/命令面板（#12）
+- 实现原则与复刻来源索引见 tracking issue #1：优先移植/复用上游 MIT 源码，
+  线上版构建产物仅作行为参考，不重复造轮子。
+
+`main` 已开启分支保护：改动走 `feat/*` / `docs/*` 分支 + PR，CI `check` 通过后
+squash 合并并自动删除分支；发布时打 `vX.Y.Z` 标签并创建 GitHub Release。
+
 ## 开发
 
 ```bash
