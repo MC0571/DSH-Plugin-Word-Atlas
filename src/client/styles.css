@@ -1374,12 +1374,20 @@
 }
 
 .wa-reveal-btn {
-  margin-top: 22px;
+  display: inline-flex;
+  margin-top: 20px;
   padding: 10px 30px;
 }
 
+/* 发音行是 inline-flex，会让后面的「显示答案」挤到同一行；复习卡片内改为块级行 */
+.wa-review-body .wa-pron-row {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
 .wa-answer {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .wa-review-example {
