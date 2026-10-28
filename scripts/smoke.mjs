@@ -208,6 +208,33 @@ assert.ok(html.includes('wa-learn-bar'))
 assert.ok(html.includes('退出'))
 
 html = render(
+  React.createElement(testSurface.Practice, { atlas: fixtureAtlas, progress: fixtureProgress }),
+  'Practice',
+)
+assert.ok(html.includes('Typing Studio'))
+assert.ok(html.includes('开始一轮'))
+
+html = render(
+  React.createElement(testSurface.GalaxyView, { atlas: fixtureAtlas, progress: fixtureProgress, onOpenWord() {} }),
+  'GalaxyView',
+)
+assert.ok(html.includes('wa-galaxy'))
+
+html = render(
+  React.createElement(testSurface.Palette, {
+    atlas: fixtureAtlas,
+    progress: fixtureProgress,
+    onClose() {},
+    onNavigate() {},
+    onOpenWord() {},
+  }),
+  'Palette',
+)
+assert.ok(html.includes('aria-label="命令面板"'))
+assert.ok(html.includes('今日学习'))
+assert.ok(html.includes('学习路线') === false)
+
+html = render(
   React.createElement(testSurface.LookupText, {
     atlas: fixtureAtlas,
     progress: fixtureProgress,

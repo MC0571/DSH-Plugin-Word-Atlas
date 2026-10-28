@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { loadEntry, hasMedia, audioUrl, MEDIA } from './data.js'
 import { LookupText } from './LookupText.jsx'
+import { shareWordCard } from './share.js'
 import { formatInterval, isDue } from './fsrs.js'
 import {
   AudioButton,
@@ -109,6 +110,16 @@ export function DetailModal({
               title={saved ? '取消收藏' : '收藏'}
             >
               <Icon name="heart" size={19} filled={saved} />
+            </button>
+            <button
+              type="button"
+              className="wa-icon-btn"
+              onClick={() => entry && shareWordCard({ entry, word, accent })}
+              disabled={!entry}
+              aria-label="生成分享卡"
+              title="生成分享卡"
+            >
+              <Icon name="share" size={19} />
             </button>
           </header>
 

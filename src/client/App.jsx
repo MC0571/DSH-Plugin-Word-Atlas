@@ -9,6 +9,9 @@ import { ReviewView } from './Review.jsx'
 import { Today } from './Today.jsx'
 import { Learn } from './Learn.jsx'
 import { Settings } from './Settings.jsx'
+import { Practice } from './Practice.jsx'
+import { GalaxyView } from './Galaxy.jsx'
+import { Palette } from './Palette.jsx'
 import { Icon, Spinner, EmptyState } from './ui.jsx'
 import { useTitlebarInset } from './titlebar.js'
 
@@ -38,7 +41,9 @@ function BrandMark() {
 const TABS = [
   { id: 'today', label: '今日', icon: 'star' },
   { id: 'atlas', label: '图鉴', icon: 'book' },
+  { id: 'galaxy', label: '星图', icon: 'orbit' },
   { id: 'review', label: '复习', icon: 'refresh' },
+  { id: 'practice', label: '练习', icon: 'keyboard' },
   { id: 'bookmarks', label: '生词本', icon: 'heart' },
   { id: 'settings', label: '我的', icon: 'user' },
 ]
@@ -51,9 +56,21 @@ export function App() {
   const [cefr, setCefr] = useState('all')
   const [topic, setTopic] = useState('all')
   const [detailStack, setDetailStack] = useState([])
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const progress = useProgress()
   const rootRef = useRef(null)
   useTitlebarInset(rootRef, view)
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   useEffect(() => {
     hydrate()
@@ -191,7 +208,7 @@ export function App() {
           </div>
         </div>
         <div className="wa-toolbar">
-          <div className="wa-search">
+          <div className="wa-search" title="⌘K 打开命令面板">
             <Icon name="search" size={16} />
             <input
               value={search}
@@ -268,6 +285,10 @@ export function App() {
               setView('atlas')
             }}
           />
+        ) : view === 'galaxy' ? (
+          <GalaxyView atlas={atlas} progress={progress} onOpenWord={pushWord} />
+        ) : view === 'practice' ? (
+          <Practice atlas={atlas} progress={progress} />
         ) : view === 'review' ? (
           <ReviewView atlas={atlas} progress={progress} onExit={() => setView('today')} onOpenWord={pushWord} />
         ) : view === 'settings' ? (
@@ -337,6 +358,15 @@ export function App() {
       </main>
 
       {detailModal}
+      {paletteOpen ? (
+        <Palette
+          atlas={atlas}
+          progress={progress}
+          onClose={() => setPaletteOpen(false)}
+          onNavigate={(next) => setView(next)}
+          onOpenWord={pushWord}
+        />
+      ) : null}
     </div>
   )
 }
