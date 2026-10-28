@@ -8,6 +8,16 @@
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-28
+
+### Fixed
+
+- **播放时白屏**：`BookReader` 中 `activeItem` 在 `queue` 声明之前引用，初始 `active=-1`
+  时不会触发；一旦播放设置 `active >= 0`，render 访问尚未初始化的 `queue`
+  抛出 `ReferenceError`，阅读模式的播放器与聆听模式共用该组件，因此两者都会整页白屏。
+  已把 `activeItem` / `activeSentenceId` 移到 `queue` 之后，并用真实浏览器 harness
+  （headless Chrome + 实际章节/音频）验证播放、聆听、切换阅读方式均无 JS 错误。
+
 ## [0.5.2] - 2026-10-28
 
 ### Fixed
