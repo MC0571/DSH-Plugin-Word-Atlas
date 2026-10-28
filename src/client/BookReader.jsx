@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { audioUrl, hasMedia, loadEntry, MEDIA, readAssetUrl } from './data.js'
+import { readAssetUrl } from './data.js'
 import { getLookupIndex } from './lookup.js'
 import { loadBookChapter } from './readings.js'
 import { update } from './store.js'
@@ -16,7 +16,8 @@ import {
   sentenceDomId,
   splitSentenceParts,
 } from './bookReader.js'
-import { EmptyState, Icon, Spinner, playAudio, stopAllAudio } from './ui.jsx'
+import { EmptyState, Icon, Spinner, stopAllAudio } from './ui.jsx'
+import { WordLookupCard } from './WordLookupCard.jsx'
 
 const SPEEDS = [0.8, 1, 1.2]
 const MODE_LABELS = [['en', '英文'], ['bi', '中英对照'], ['zh', '中文']]
@@ -130,85 +131,6 @@ function Paragraph({ paragraph, mode, activeId, audioLang, onWord, onPlay, looku
   )
 }
 
-function WordPopover({ atlas, id, surface, x, y, accent, bookmarked, onToggleBookmark, onClose, onOpenWord }) {
-  const [state, setState] = useState({ status: id ? 'loading' : 'missing', entry: null, error: '' })
-  useEffect(() => {
-    if (!id) {
-      setState({ status: 'missing', entry: null, error: '' })
-      return undefined
-    }
-    let alive = true
-    setState({ status: 'loading', entry: null, error: '' })
-    loadEntry(atlas, id)
-      .then((entry) => alive && setState({ status: 'ready', entry, error: '' }))
-      .catch((error) => alive && setState({ status: 'error', entry: null, error: error.message || '查不到这个词。' }))
-    return () => {
-      alive = false
-    }
-  }, [atlas, id])
-  useEffect(() => () => stopAllAudio(), [])
-  const entry = state.entry
-  return (
-    <div
-      className="wa-book-word-pop"
-      role="dialog"
-      aria-label="词义"
-      style={{ left: Math.max(12, x), top: Math.max(12, y) }}
-    >
-        <button type="button" className="wa-book-pop-close" onClick={onClose} aria-label="关闭">
-          <Icon name="close" size={16} />
-        </button>
-        {state.status === 'missing' ? (
-          <>
-            <h2 lang="en">{surface}</h2>
-            <p className="wa-panel-note">词库暂未收录这个词。</p>
-          </>
-        ) : null}
-        {state.status === 'loading' ? <Spinner label="正在查词…" /> : null}
-        {state.status === 'error' ? (
-          <>
-            <h2 lang="en">{surface || id}</h2>
-            <p className="wa-panel-note">{state.error}</p>
-          </>
-        ) : null}
-        {entry ? (
-          <>
-            <h2 lang="en">{entry.w}</h2>
-            <div className="wa-book-pop-pron">
-              <span>{entry.uk || entry.us || ''}</span>
-              {hasMedia(entry, MEDIA.uk) ? (
-                <button type="button" onClick={() => playAudio(`book:uk:${entry.id}`, audioUrl('uk', entry.id))} aria-label="英式发音">
-                  <Icon name="volume" size={15} /> 英
-                </button>
-              ) : null}
-              {hasMedia(entry, MEDIA.us) ? (
-                <button type="button" onClick={() => playAudio(`book:us:${entry.id}`, audioUrl('us', entry.id))} aria-label="美式发音">
-                  <Icon name="volume" size={15} /> 美
-                </button>
-              ) : null}
-            </div>
-            <div className="wa-book-pop-senses">
-              {(entry.senses || []).slice(0, 2).map((sense, index) => (
-                <p key={index}>
-                  {sense.pos ? <span className="wa-pos">{sense.pos}</span> : null}
-                  {sense.zh}
-                </p>
-              ))}
-            </div>
-            <div className="wa-book-pop-actions">
-              <button type="button" className={`wa-btn wa-btn-ghost wa-book-pop-fav ${bookmarked ? 'is-on' : ''}`} onClick={onToggleBookmark}>
-                <Icon name="heart" size={15} filled={bookmarked} /> {bookmarked ? '已收藏' : '收藏'}
-              </button>
-              <button type="button" className="wa-btn wa-btn-primary" onClick={() => { onClose(); onOpenWord(entry.id) }}>
-                查看词卡 <Icon name="chevronRight" size={15} />
-              </button>
-            </div>
-          </>
-        ) : null}
-    </div>
-  )
-}
-
 export function BookReader({ atlas, progress, book, meta, restorePid, onBack, onOpenChapter, onOpenWord, onReaderFocus }) {
   const [chapterState, setChapterState] = useState({ status: 'loading', data: null, error: '' })
   const [prefs, setPrefs] = useState(loadReaderPrefs)
@@ -248,23 +170,11 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const queue = useMemo(() => (chapter ? buildSentenceQueue(chapter, language) : []), [chapter, language])
   const activeItem = active >= 0 ? queue[active] : null
   const activeSentenceId = activeItem?.domId || ''
-  const bookmarks = Array.isArray(progress.bookmarks) ? progress.bookmarks : []
   const isDone = Boolean(progress.readings?.[chapterKey(book.id, meta.n)]?.done)
 
   useEffect(() => {
     saveReaderPrefs(prefs)
   }, [prefs])
-
-  useEffect(() => {
-    if (!word) return undefined
-    const onPointerDown = (event) => {
-      const target = event.target
-      if (target instanceof Element && target.closest('.wa-book-word-pop')) return
-      setWord(null)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [word])
 
   useEffect(() => {
     if (!lookupMode) return
@@ -540,25 +450,10 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
     if (audioRef.current && !audioRef.current.paused) audioRef.current.pause()
     const resolved = id || (surface ? lookupIndex?.resolve(surface) : null)
     const rect = event?.currentTarget?.getBoundingClientRect?.()
-    setWord({
-      id: resolved || null,
-      surface: surface || id || '',
-      x: rect ? Math.min(rect.left, (window.innerWidth || 0) - 340) : 40,
-      y: rect ? Math.min(rect.bottom + 8, (window.innerHeight || 0) - 300) : 80,
-    })
-  }
-
-  const toggleWordBookmark = () => {
-    const id = word?.id
-    if (!id) return
-    update((state) => {
-      const list = Array.isArray(state.bookmarks) ? state.bookmarks : []
-      const exists = list.includes(id)
-      return {
-        ...state,
-        bookmarks: exists ? list.filter((item) => item !== id) : [...list, id],
-      }
-    })
+    const anchor = rect
+      ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height, bottom: rect.bottom }
+      : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0, bottom: window.innerHeight / 2 }
+    setWord({ id: resolved || null, surface: surface || id || '', anchor })
   }
 
   const playSentence = (pid, index, lang) => {
@@ -887,15 +782,12 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
       ) : null}
 
       {word ? (
-        <WordPopover
+        <WordLookupCard
           atlas={atlas}
-          id={word.id}
+          progress={progress}
+          refId={word.id}
           surface={word.surface}
-          x={word.x}
-          y={word.y}
-          accent={progress.settings.accent}
-          bookmarked={word.id ? bookmarks.includes(word.id) : false}
-          onToggleBookmark={toggleWordBookmark}
+          anchor={word.anchor}
           onClose={() => setWord(null)}
           onOpenWord={onOpenWord}
         />
