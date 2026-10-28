@@ -8,6 +8,10 @@
 #   mediaBase   官方素材根地址，默认 https://0xlei.tech/words/
 #   stateFile   复习进度保存文件；默认 $DSH_HOME/word-atlas-dsh/progress.json
 #   tools       默认 true；设为 false 时不注册 word_atlas_lookup / word_atlas_search
+#   offlineDir  离线素材目录；默认 $DSH_HOME/word-atlas-dsh/content
+#   cacheDir    按需缓存目录；默认 $DSH_HOME/word-atlas-dsh/cache
+#   autoCache   默认 false；true 时浏览插画/发音会顺手落盘缓存
+#   cacheMaxBytes 按需缓存上限（默认 1 GiB，超出按时间 LRU 清理）
 - insert:
     - id: word-atlas
       name: 'word-atlas-dsh'

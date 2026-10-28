@@ -19,10 +19,11 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
 import { createAtlasTools } from './tools.js'
+import { createOfflineManager } from './offline.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
-const BUILD = '0.1.0+tools-local'
+const BUILD = '0.2.0'
 const ROUTE = '/word-atlas'
 const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 const DEFAULT_MEDIA_BASE = 'https://0xlei.tech/words/'
@@ -58,11 +59,14 @@ function resolveMediaBase(config) {
   return raw.replace(/\/+$/, '')
 }
 
+function resolveHome() {
+  return process.env.DSH_HOME || process.env.DSH_PROFILE_DIR || join(homedir(), '.dsh')
+}
+
 function resolveStateFile(config) {
   const configured = typeof config?.stateFile === 'string' ? config.stateFile.trim() : ''
   if (configured) return resolve(HERE, configured)
-  const home = process.env.DSH_HOME || process.env.DSH_PROFILE_DIR || join(homedir(), '.dsh')
-  return join(home, 'word-atlas-dsh', 'progress.json')
+  return join(resolveHome(), 'word-atlas-dsh', 'progress.json')
 }
 
 function json(res, value, status = 200) {
@@ -161,8 +165,10 @@ function normalizeProgress(value) {
   const cards = value.cards && typeof value.cards === 'object' && !Array.isArray(value.cards) ? value.cards : {}
   const bookmarks = Array.isArray(value.bookmarks) ? value.bookmarks.filter((id) => typeof id === 'string').slice(0, 20000) : []
   const days = value.days && typeof value.days === 'object' && !Array.isArray(value.days) ? value.days : {}
+  const mistakes = Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : []
+  const typing = Array.isArray(value.typing) ? value.typing.slice(-500) : []
   const settings = value.settings && typeof value.settings === 'object' && !Array.isArray(value.settings) ? value.settings : {}
-  return { v: 1, cards, bookmarks, days, settings, savedAt: Date.now() }
+  return { v: 1, cards, bookmarks, days, mistakes, typing, settings, savedAt: Date.now() }
 }
 
 async function loadProgress(file) {
@@ -183,7 +189,7 @@ async function saveProgress(file, data) {
   await rename(tmp, file)
 }
 
-function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics }) {
+function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics, offline }) {
   let cachedCount
   const count = () => {
     if (cachedCount !== undefined) return cachedCount
@@ -212,15 +218,47 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics }) {
     return join(DATA_DIR, 'entries', `${chunk}.json`)
   }
 
-  const mediaLocal = (parts) => {
+  const MEDIA_HEADERS = { 'Cache-Control': 'public, max-age=604800' }
+
+  const contentMediaFile = (rel) => {
     if (!contentDir) return null
-    const file = join(contentDir, 'public', 'atlas', ...parts)
+    const file = join(contentDir, 'public', 'atlas', rel)
     return existsSync(file) ? file : null
+  }
+
+  /** contentDir → 手动离线包 → 按需缓存 → 官方站点回退。 */
+  async function serveMedia(req, res, rel) {
+    const local = contentMediaFile(rel)
+    if (local) {
+      serveFile(req, res, local, MEDIA_HEADERS)
+      return
+    }
+    const offlineFile = offline.localFileFor(rel)
+    if (offlineFile) {
+      serveFile(req, res, offlineFile, MEDIA_HEADERS)
+      return
+    }
+    const cached = await offline.fetchAndCache(rel)
+    if (cached?.file) {
+      serveFile(req, res, cached.file, MEDIA_HEADERS)
+      return
+    }
+    if (cached?.buffer) {
+      res.writeHead(200, {
+        'Content-Type': cached.type || offline.contentTypeFor(rel),
+        'Content-Length': cached.buffer.length,
+        'Cache-Control': 'public, max-age=604800',
+        'X-Content-Type-Options': 'nosniff',
+      })
+      res.end(cached.buffer)
+      return
+    }
+    redirect(res, `${mediaBase}/atlas/${rel}`)
   }
 
   return async function handler(req, res) {
     try {
-      if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') {
+      if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST' && req.method !== 'DELETE') {
         json(res, { error: 'method not allowed' }, 405)
         return
       }
@@ -254,6 +292,17 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics }) {
           stateFile,
           build: diagnostics.build,
           tools: diagnostics.tools,
+          offline: (() => {
+            const status = offline.snapshot()
+            return {
+              state: status.state,
+              done: status.done,
+              total: status.total,
+              failed: status.failed,
+              autoCache: status.autoCache,
+              dir: status.dir,
+            }
+          })(),
         })
         return
       }
@@ -280,6 +329,33 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics }) {
         return
       }
 
+      if (path === '/api/offline') {
+        if (req.method === 'DELETE') {
+          json(res, await offline.clear())
+          return
+        }
+        json(res, offline.snapshot())
+        return
+      }
+
+      if (path === '/api/offline/start' && req.method === 'POST') {
+        let payload
+        try {
+          payload = JSON.parse(await readBody(req))
+        } catch {
+          json(res, { ok: false, error: 'invalid-payload' }, 400)
+          return
+        }
+        const result = await offline.start({ tiers: payload?.tiers, source: payload?.source })
+        json(res, result, result.ok ? 200 : 400)
+        return
+      }
+
+      if (path === '/api/offline/cancel' && req.method === 'POST') {
+        json(res, offline.cancel())
+        return
+      }
+
       if (path === '/atlas/index.json') {
         serveFile(req, res, atlasIndexFile(), { 'Cache-Control': 'public, max-age=3600' })
         return
@@ -293,23 +369,13 @@ function createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics }) {
 
       match = /^\/atlas\/(img|thumb)\/([a-z0-9][a-z0-9-]*)\.webp$/.exec(path)
       if (match) {
-        const file = mediaLocal([match[1], `${match[2]}.webp`])
-        if (file) {
-          serveFile(req, res, file, { 'Cache-Control': 'public, max-age=604800' })
-        } else {
-          redirect(res, `${mediaBase}/atlas/${match[1]}/${match[2]}.webp`)
-        }
+        await serveMedia(req, res, `${match[1]}/${match[2]}.webp`)
         return
       }
 
       match = /^\/atlas\/audio\/(uk|us|ex|ex2)\/([a-z0-9][a-z0-9-]*)\.mp3$/.exec(path)
       if (match) {
-        const file = mediaLocal(['audio', match[1], `${match[2]}.mp3`])
-        if (file) {
-          serveFile(req, res, file, { 'Cache-Control': 'public, max-age=604800' })
-        } else {
-          redirect(res, `${mediaBase}/atlas/audio/${match[1]}/${match[2]}.mp3`)
-        }
+        await serveMedia(req, res, `audio/${match[1]}/${match[2]}.mp3`)
         return
       }
 
@@ -337,13 +403,37 @@ export async function apply(ctx, config = {}) {
   const contentDir = resolveContentDir(config)
   const mediaBase = resolveMediaBase(config)
   const stateFile = resolveStateFile(config)
+  const home = resolveHome()
+  const offlineDir = typeof config.offlineDir === 'string' && config.offlineDir.trim()
+    ? resolve(HERE, config.offlineDir.trim())
+    : join(home, 'word-atlas-dsh', 'content')
+  const cacheDir = typeof config.cacheDir === 'string' && config.cacheDir.trim()
+    ? resolve(HERE, config.cacheDir.trim())
+    : join(home, 'word-atlas-dsh', 'cache')
   const diagnostics = { build: BUILD, tools: { registered: [], error: null } }
-  const handler = createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics })
+  const offlineStateFile = typeof config.offlineStateFile === 'string' && config.offlineStateFile.trim()
+    ? resolve(HERE, config.offlineStateFile.trim())
+    : join(home, 'word-atlas-dsh', 'offline-state.json')
+  const offline = createOfflineManager({
+    dataDir: DATA_DIR,
+    contentDir,
+    mediaBase,
+    offlineDir,
+    cacheDir,
+    stateFile: offlineStateFile,
+    autoCache: config.autoCache === true,
+    cacheMaxBytes: Number(config.cacheMaxBytes) > 0 ? Number(config.cacheMaxBytes) : 1024 * 1024 * 1024,
+    concurrency: Number(config.offlineConcurrency) > 0 ? Number(config.offlineConcurrency) : 6,
+    logger: ctx.logger,
+  })
+  const handler = createHandler({ ctx, contentDir, mediaBase, stateFile, diagnostics, offline })
 
   ctx.logger?.info?.(
-    'word-atlas: content=%s media=%s progress=%s',
+    'word-atlas: content=%s media=%s offline=%s cache=%s progress=%s',
     contentDir ? contentDir : 'packaged',
     contentDir ? 'local files' : mediaBase,
+    offlineDir,
+    config.autoCache === true ? cacheDir : 'off',
     stateFile,
   )
 

@@ -5,60 +5,10 @@ import { Rating, review } from './fsrs.js'
 import { DetailModal } from './Detail.jsx'
 import { WordGrid } from './Browse.jsx'
 import { ReviewView } from './Review.jsx'
-import { Icon, Overlay, Spinner, EmptyState } from './ui.jsx'
+import { Settings } from './Settings.jsx'
+import { Icon, Spinner, EmptyState } from './ui.jsx'
 
 const RATING_GOOD = Rating.Good
-
-function AboutModal({ progress, onClose }) {
-  const setAccent = (accent) => update((state) => ({ ...state, settings: { ...state.settings, accent } }))
-  return (
-    <Overlay onClose={onClose} labelledBy="wa-about-title">
-      <div className="wa-about">
-        <button type="button" className="wa-icon-btn wa-about-close" onClick={onClose} aria-label="关闭">
-          <Icon name="close" size={18} />
-        </button>
-        <h2 id="wa-about-title">词光 · Word Atlas</h2>
-        <p>
-          把开源项目 <strong>词光 · Word Atlas</strong> 做成 DeepSeek Harness 插件：
-          7,298 个雅思词条、19 个话题，每词一幅插画、英美发音与例句朗读，配 FSRS 间隔复习。
-        </p>
-        <div className="wa-about-section">
-          <h3 className="wa-eyebrow">发音偏好</h3>
-          <div className="wa-segmented">
-            <button type="button" className={progress.settings.accent === 'uk' ? 'is-on' : ''} onClick={() => setAccent('uk')}>
-              英音
-            </button>
-            <button type="button" className={progress.settings.accent === 'us' ? 'is-on' : ''} onClick={() => setAccent('us')}>
-              美音
-            </button>
-          </div>
-          <p className="wa-about-note">词条详情里两个发音始终都可以播放，这里只是偏好标记。</p>
-        </div>
-        <div className="wa-about-section">
-          <h3 className="wa-eyebrow">数据与授权</h3>
-          <p className="wa-about-note">
-            词库文本、插画与录音来自{' '}
-            <a href="https://github.com/designfuchen/word-atlas" target="_blank" rel="noreferrer">
-              designfuchen/word-atlas
-            </a>
-            ，由 Word Atlas contributors（词光）创作，以{' '}
-            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-              CC BY 4.0
-            </a>{' '}
-            授权；插件代码 MIT。内容由生成式 AI 辅助制作，未逐条人工审校。
-          </p>
-        </div>
-        <div className="wa-about-section">
-          <h3 className="wa-eyebrow">复习进度</h3>
-          <p className="wa-about-note">
-            保存在本机 <code>$DSH_HOME/word-atlas-dsh/progress.json</code>，同时镜像到浏览器 localStorage。
-            复习调度使用 ts-fsrs 的 FSRS 算法。
-          </p>
-        </div>
-      </div>
-    </Overlay>
-  )
-}
 
 function BrandMark() {
   return (
@@ -81,6 +31,13 @@ function BrandMark() {
   )
 }
 
+const TABS = [
+  { id: 'atlas', label: '图鉴', icon: 'book' },
+  { id: 'review', label: '复习', icon: 'refresh' },
+  { id: 'bookmarks', label: '生词本', icon: 'heart' },
+  { id: 'settings', label: '我的', icon: 'user' },
+]
+
 export function App() {
   const [atlas, setAtlas] = useState(null)
   const [error, setError] = useState('')
@@ -88,8 +45,7 @@ export function App() {
   const [search, setSearch] = useState('')
   const [cefr, setCefr] = useState('all')
   const [topic, setTopic] = useState('all')
-  const [detailId, setDetailId] = useState(null)
-  const [aboutOpen, setAboutOpen] = useState(false)
+  const [detailStack, setDetailStack] = useState([])
   const progress = useProgress()
 
   useEffect(() => {
@@ -142,10 +98,14 @@ export function App() {
   const streakDays = useMemo(() => streak(progress.days), [progress.days])
 
   const activeList = view === 'bookmarks' ? bookmarks : filtered
+  const detailId = detailStack.length > 0 ? detailStack[detailStack.length - 1] : null
   const detailWord = detailId && atlas ? atlas.byId.get(detailId) : null
   const detailIndex = detailWord ? activeList.findIndex((word) => word.id === detailWord.id) : -1
+  const detailBackWord = detailStack.length > 1 && atlas ? atlas.byId.get(detailStack[detailStack.length - 2]) : null
 
-  const openWord = (id) => setDetailId(id)
+  const openWord = (id) => setDetailStack([id])
+  const pushWord = (id) => setDetailStack((stack) => (stack[stack.length - 1] === id ? stack : [...stack, id]))
+  const closeDetail = () => setDetailStack((stack) => stack.slice(0, -1))
   const toggleBookmark = (id) => update((state) => toggleBookmarkState(state, id))
   const markLearned = (id) =>
     update((state) => {
@@ -156,17 +116,12 @@ export function App() {
         days: bumpDay(state.days, { newWords: 1 }),
       }
     })
-
   const changeAccent = () =>
     update((state) => ({
       ...state,
       settings: { ...state.settings, accent: state.settings.accent === 'uk' ? 'us' : 'uk' },
     }))
-
-  const goAtlas = () => {
-    setView('atlas')
-    setDetailId(null)
-  }
+  const goAtlas = () => setView('atlas')
 
   return (
     <div className="wa-root">
@@ -202,25 +157,28 @@ export function App() {
           <button type="button" className="wa-btn wa-btn-ghost wa-accent-btn" onClick={changeAccent} title="切换发音偏好">
             <Icon name="globe" size={15} /> {progress.settings.accent === 'uk' ? '英音' : '美音'}
           </button>
-          <button type="button" className="wa-icon-btn" onClick={() => setAboutOpen(true)} aria-label="关于词光">
+          <button type="button" className="wa-icon-btn" onClick={() => setView('settings')} aria-label="设置与关于">
             <Icon name="info" size={18} />
           </button>
         </div>
       </header>
 
       <nav className="wa-tabs" role="tablist" aria-label="词光视图">
-        <button type="button" role="tab" aria-selected={view === 'atlas'} className={view === 'atlas' ? 'is-on' : ''} onClick={() => setView('atlas')}>
-          <Icon name="book" size={16} /> 图鉴
-          {atlas ? <span className="wa-tab-count">{atlas.count.toLocaleString('en-US')}</span> : null}
-        </button>
-        <button type="button" role="tab" aria-selected={view === 'review'} className={view === 'review' ? 'is-on' : ''} onClick={() => setView('review')}>
-          <Icon name="refresh" size={16} /> 复习
-          {dueCount > 0 ? <span className="wa-tab-badge">{dueCount > 999 ? '999+' : dueCount}</span> : null}
-        </button>
-        <button type="button" role="tab" aria-selected={view === 'bookmarks'} className={view === 'bookmarks' ? 'is-on' : ''} onClick={() => setView('bookmarks')}>
-          <Icon name="heart" size={16} /> 生词本
-          {bookmarks.length > 0 ? <span className="wa-tab-count">{bookmarks.length}</span> : null}
-        </button>
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={view === tab.id}
+            className={view === tab.id ? 'is-on' : ''}
+            onClick={() => setView(tab.id)}
+          >
+            <Icon name={tab.icon} size={16} /> {tab.label}
+            {tab.id === 'atlas' && atlas ? <span className="wa-tab-count">{atlas.count.toLocaleString('en-US')}</span> : null}
+            {tab.id === 'review' && dueCount > 0 ? <span className="wa-tab-badge">{dueCount > 999 ? '999+' : dueCount}</span> : null}
+            {tab.id === 'bookmarks' && bookmarks.length > 0 ? <span className="wa-tab-count">{bookmarks.length}</span> : null}
+          </button>
+        ))}
         <div className="wa-tabs-meta">
           <span>已学 {learnedCount.toLocaleString('en-US')}</span>
           <i />
@@ -241,7 +199,9 @@ export function App() {
             <Spinner label="正在加载词光词库…" />
           </div>
         ) : view === 'review' ? (
-          <ReviewView atlas={atlas} progress={progress} onExit={goAtlas} />
+          <ReviewView atlas={atlas} progress={progress} onExit={goAtlas} onOpenWord={pushWord} />
+        ) : view === 'settings' ? (
+          <Settings atlas={atlas} progress={progress} />
         ) : view === 'bookmarks' ? (
           bookmarks.length === 0 ? (
             <EmptyState icon="heart" title="生词本还是空的">
@@ -311,13 +271,17 @@ export function App() {
           atlas={atlas}
           word={detailWord}
           progress={progress}
-          onClose={() => setDetailId(null)}
-          onOpenWord={openWord}
+          onClose={() => setDetailStack([])}
+          onOpenWord={pushWord}
+          onBack={detailStack.length > 1 ? closeDetail : undefined}
+          backLabel={detailBackWord?.word}
           onPrev={() => {
-            if (detailIndex > 0) setDetailId(activeList[detailIndex - 1].id)
+            if (detailIndex > 0) setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex - 1].id])
           }}
           onNext={() => {
-            if (detailIndex >= 0 && detailIndex < activeList.length - 1) setDetailId(activeList[detailIndex + 1].id)
+            if (detailIndex >= 0 && detailIndex < activeList.length - 1) {
+              setDetailStack((stack) => [...stack.slice(0, -1), activeList[detailIndex + 1].id])
+            }
           }}
           hasPrev={detailIndex > 0}
           hasNext={detailIndex >= 0 && detailIndex < activeList.length - 1}
@@ -325,8 +289,6 @@ export function App() {
           onMarkLearned={markLearned}
         />
       ) : null}
-
-      {aboutOpen ? <AboutModal progress={progress} onClose={() => setAboutOpen(false)} /> : null}
     </div>
   )
 }

@@ -103,7 +103,9 @@ const fixtureProgress = {
   cards: {},
   bookmarks: [],
   days: {},
-  settings: { accent: 'uk', dailyNew: 10, retention: 0.9 },
+  misses: [],
+  typing: [],
+  settings: { accent: 'uk', dailyNew: 10, retention: 0.9, startLevel: 0, spell: true, autoplay: true },
 }
 const testSurface = clientRuntime.__test
 assert.ok(testSurface, 'entry must expose the __test surface')
@@ -140,7 +142,38 @@ html = render(
   'DetailModal',
 )
 assert.ok(html.includes('library'))
-console.log('client: module shape, slot registrations and view renders OK')
+
+html = render(React.createElement(testSurface.Settings, { atlas: fixtureAtlas, progress: fixtureProgress }), 'Settings')
+assert.ok(html.includes('离线素材'))
+assert.ok(html.includes('导出备份'))
+
+html = render(
+  React.createElement(testSurface.LookupText, {
+    atlas: fixtureAtlas,
+    progress: fixtureProgress,
+    text: 'Public libraries support lifelong learning.',
+    headword: 'library',
+    onOpenWord() {},
+  }),
+  'LookupText',
+)
+assert.ok(html.includes('wa-lookup-token'))
+
+const lookup = testSurface.createLookupIndex([
+  { id: 'library', word: 'library' },
+  { id: 'abandon', word: 'abandon' },
+  { id: 'go', word: 'go' },
+  { id: 'study', word: 'study' },
+  { id: 'child', word: 'child' },
+])
+assert.equal(lookup.resolve('libraries'), 'library')
+assert.equal(lookup.resolve('abandoned'), 'abandon')
+assert.equal(lookup.resolve('went'), 'go')
+assert.equal(lookup.resolve('studied'), 'study')
+assert.equal(lookup.resolve('children'), 'child')
+assert.equal(lookup.resolve('zzzzzz'), null)
+assert.deepEqual(testSurface.candidateBases('running').includes('run'), true)
+console.log('client: module shape, slot registrations, lookup and view renders OK')
 
 /* ------------------------------------------------------------------ host */
 
@@ -180,7 +213,21 @@ const hostCtx = {
   },
 }
 const host = await import(join(root, 'index.js'))
-await host.apply(hostCtx, { stateFile })
+const { buildMediaList } = await import(join(root, 'offline.js'))
+const thumbFiles = await buildMediaList(join(root, 'data'), ['thumb'])
+assert.equal(thumbFiles.length, 7298)
+assert.equal((await buildMediaList(join(root, 'data'), ['img'])).length, 7298)
+assert.equal((await buildMediaList(join(root, 'data'), ['audio'])).length, 22905)
+assert.equal((await buildMediaList(join(root, 'data'), ['thumb', 'img', 'audio'])).length, 37501)
+console.log('host: offline media list', thumbFiles.length, 'thumbs, 37501 total files')
+
+const offlineDir = join(root, 'build', 'smoke-offline')
+const cacheDir = join(root, 'build', 'smoke-cache')
+const offlineStateFile = join(root, 'build', 'smoke-offline-state.json')
+rmSync(offlineDir, { recursive: true, force: true })
+rmSync(cacheDir, { recursive: true, force: true })
+rmSync(offlineStateFile, { force: true })
+await host.apply(hostCtx, { stateFile, offlineDir: 'build/smoke-offline', cacheDir: 'build/smoke-cache', offlineStateFile: 'build/smoke-offline-state.json' })
 assert.equal(routes.length, 1)
 assert.equal(routes[0].kind, 'prefix')
 assert.equal(routes[0].path, '/word-atlas')
@@ -295,6 +342,37 @@ response = await request('/word-atlas/atlas/../package.json')
 assert.equal(response.status, 404)
 console.log('host: progress read/save, 404s OK')
 
+response = await request('/word-atlas/api/offline')
+assert.equal(response.status, 200)
+const offlineStatus = await response.json()
+assert.equal(offlineStatus.state, 'idle')
+assert.equal(offlineStatus.contentDirReady, true)
+assert.deepEqual(offlineStatus.tiersAvailable, ['thumb', 'img', 'audio'])
+assert.equal(typeof offlineStatus.dir, 'string')
+
+response = await request('/word-atlas/api/offline/start', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ tiers: ['nope'], source: 'remote' }),
+})
+assert.equal(response.status, 400)
+assert.equal((await response.json()).ok, false)
+
+response = await request('/word-atlas/api/offline/start', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ tiers: ['thumb'], source: 'bogus' }),
+})
+assert.equal(response.status, 400)
+
+response = await request('/word-atlas/api/offline', { method: 'DELETE' })
+assert.equal(response.status, 200)
+assert.equal((await response.json()).ok, true)
+console.log('host: offline status / validation / clear OK')
+
 server.close()
 rmSync(stateFile, { force: true })
+rmSync(offlineDir, { recursive: true, force: true })
+rmSync(cacheDir, { recursive: true, force: true })
+rmSync(offlineStateFile, { force: true })
 console.log('smoke: all checks passed')

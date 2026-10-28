@@ -11,10 +11,13 @@ export const defaultSettings = {
   accent: 'uk',
   dailyNew: 10,
   retention: 0.9,
+  startLevel: 0,
+  spell: true,
+  autoplay: true,
 }
 
 export function emptyProgress() {
-  return { v: 1, cards: {}, bookmarks: [], days: {}, settings: { ...defaultSettings } }
+  return { v: 1, cards: {}, bookmarks: [], days: {}, mistakes: [], typing: [], settings: { ...defaultSettings } }
 }
 
 function normalize(value) {
@@ -25,6 +28,8 @@ function normalize(value) {
     cards: value.cards && typeof value.cards === 'object' && !Array.isArray(value.cards) ? value.cards : {},
     bookmarks: Array.isArray(value.bookmarks) ? value.bookmarks.filter((id) => typeof id === 'string') : [],
     days: value.days && typeof value.days === 'object' && !Array.isArray(value.days) ? value.days : {},
+    mistakes: Array.isArray(value.mistakes) ? value.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : [],
+    typing: Array.isArray(value.typing) ? value.typing.slice(-500) : [],
     settings: { ...defaultSettings, ...(value.settings && typeof value.settings === 'object' ? value.settings : {}) },
     ...(typeof value.savedAt === 'number' ? { savedAt: value.savedAt } : {}),
   }
@@ -147,4 +152,114 @@ export function toggleBookmark(progress, id) {
     ...progress,
     bookmarks: has ? progress.bookmarks.filter((item) => item !== id) : [id, ...progress.bookmarks],
   }
+}
+
+/* ------------------------------------------------------------- backup */
+
+const DATASET_ID = 'word-atlas-open'
+
+function isObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isFiniteNumber(value, min = 0, max = Infinity) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
+}
+
+function validCard(value) {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.due) &&
+    isFiniteNumber(value.s) &&
+    isFiniteNumber(value.d, 0, 11) &&
+    isFiniteNumber(value.el) &&
+    isFiniteNumber(value.sd) &&
+    isFiniteNumber(value.ls) &&
+    isFiniteNumber(value.reps) &&
+    isFiniteNumber(value.lapses) &&
+    [0, 1, 2, 3].includes(value.st) &&
+    (value.last === undefined || isFiniteNumber(value.last)) &&
+    isFiniteNumber(value.seen)
+  )
+}
+
+/** 导出为与上游词光兼容的备份格式（app/version/progress/settings）。 */
+export function exportBackup() {
+  flush()
+  return JSON.stringify(
+    {
+      app: 'word-atlas',
+      version: 2,
+      exported: new Date().toISOString(),
+      progress: {
+        version: 2,
+        datasetId: DATASET_ID,
+        cards: state.cards,
+        bookmarks: state.bookmarks,
+        days: state.days,
+        typing: state.typing,
+        session: null,
+        mistakes: state.mistakes,
+      },
+      settings: state.settings,
+    },
+    null,
+    1,
+  )
+}
+
+/** 导入上游导出的备份（也接受本插件导出的同一格式）。 */
+export function importBackup(text) {
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch {
+    return { ok: false, error: '文件不是有效的 JSON。' }
+  }
+  if (!isObject(data) || data.app !== 'word-atlas' || data.version !== 2 || !isObject(data.progress)) {
+    return { ok: false, error: '这不是词光的学习备份。' }
+  }
+  const raw = data.progress
+  if (typeof raw.datasetId === 'string' && raw.datasetId !== DATASET_ID) {
+    return { ok: false, error: '备份来自另一个词库，请使用词光开放词库的备份。' }
+  }
+  const cards = {}
+  if (isObject(raw.cards)) {
+    for (const [id, card] of Object.entries(raw.cards)) if (validCard(card)) cards[id] = card
+  }
+  const bookmarks = Array.isArray(raw.bookmarks) ? raw.bookmarks.filter((id) => typeof id === 'string').slice(0, 20000) : []
+  const days = {}
+  if (isObject(raw.days)) {
+    for (const [key, day] of Object.entries(raw.days)) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !isObject(day)) continue
+      const n = Number(day.n) || 0
+      const r = Number(day.r) || 0
+      const c = Number(day.c) || 0
+      days[key] = { n, r, c }
+    }
+  }
+  const mistakes = Array.isArray(raw.mistakes) ? raw.mistakes.filter((id) => typeof id === 'string').slice(0, 300) : []
+  const typing = Array.isArray(raw.typing) ? raw.typing.slice(-500) : []
+  const settings = { ...defaultSettings, ...(isObject(data.settings) ? data.settings : {}) }
+  state = {
+    v: 1,
+    cards,
+    bookmarks,
+    days,
+    mistakes,
+    typing,
+    settings,
+    savedAt: Date.now(),
+  }
+  writeLocal()
+  emit()
+  flush()
+  return { ok: true, cards: Object.keys(cards).length }
+}
+
+export function resetProgress() {
+  state = { ...emptyProgress(), savedAt: Date.now() }
+  writeLocal()
+  emit()
+  flush()
 }
