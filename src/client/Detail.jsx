@@ -100,18 +100,6 @@ export function DetailModal({
               {topicLabel ? <span className="wa-chip">{topicLabel}</span> : null}
               {card ? <span className={`wa-chip wa-chip-status ${card.st === 2 ? 'is-done' : ''}`}>{card.st === 2 ? '复习中' : '学习中'}</span> : null}
             </div>
-            <div className="wa-detail-head-actions">
-              <button
-                type="button"
-                className={`wa-icon-btn ${saved ? 'is-on' : ''}`}
-                onClick={() => onToggleBookmark(word.id)}
-                aria-pressed={saved}
-                aria-label={saved ? '取消收藏' : '收藏'}
-                title={saved ? '取消收藏' : '收藏'}
-              >
-                <Icon name="heart" size={19} filled={saved} />
-              </button>
-            </div>
           </header>
 
           <h2 id="wa-detail-title" className="wa-headword" lang="en">
@@ -269,6 +257,14 @@ export function DetailModal({
                   )}
                 </div>
                 <div className="wa-detail-actions">
+                  <button
+                    type="button"
+                    className={`wa-btn wa-btn-ghost ${saved ? 'is-on' : ''}`}
+                    onClick={() => onToggleBookmark(word.id)}
+                    aria-pressed={saved}
+                  >
+                    <Icon name="heart" size={15} filled={saved} /> {saved ? '已收藏' : '收藏'}
+                  </button>
                   <button
                     type="button"
                     className="wa-btn wa-btn-ghost"

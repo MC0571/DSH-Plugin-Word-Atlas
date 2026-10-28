@@ -6313,3 +6313,106 @@
   border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent);
   color: var(--dsw-alias-state-error-primary);
 }
+
+/* ============================================ unified lookup card v0.5.7 */
+
+.wa-wlc {
+  position: fixed;
+  z-index: 1500;
+  width: min(400px, calc(100vw - 24px));
+  padding: 22px 22px 18px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--wa-line));
+  border-radius: 16px;
+  background: var(--dsw-alias-bg-overlay);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.32);
+  animation: wa-fade 0.12s ease;
+}
+
+.wa-wlc-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.wa-wlc-word {
+  margin: 0 34px 0 0;
+  font-family: Georgia, 'Songti SC', serif;
+  font-size: 38px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.wa-wlc-pron {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wa-wlc-ipa {
+  color: var(--wa-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.wa-wlc-senses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0 20px;
+}
+
+.wa-wlc-sense {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.wa-wlc-pos {
+  color: var(--wa-muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.wa-wlc-empty {
+  margin: 12px 0 4px;
+  color: var(--wa-muted);
+  font-size: 12px;
+}
+
+.wa-wlc-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.wa-wlc-actions .wa-btn {
+  flex: 1 1 0;
+  white-space: nowrap;
+}
+
+.wa-wlc-fav.is-on {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.wa-detail-actions .wa-btn.is-on {
+  border-color: color-mix(in srgb, var(--dsw-alias-brand-primary) 50%, transparent);
+  color: var(--dsw-alias-label-primary);
+}
+
+@media (max-width: 520px) {
+  .wa-wlc-word {
+    font-size: 32px;
+  }
+
+  .wa-wlc-actions {
+    flex-direction: column;
+  }
+}
