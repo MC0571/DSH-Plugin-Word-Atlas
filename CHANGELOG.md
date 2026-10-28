@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-10-28
+
+### Fixed
+
+- 听音辨词的圆形播放按钮被渲染为方圆形（squircle）：DSH 宿主样式在 Chrome 139+
+  给按钮设置了 `corner-shape: squircle`，导致 `border-radius: 50%` 变成超椭圆。
+  插件根作用域内统一 `corner-shape: round`，恢复圆形/圆角控件的设计意图；
+  不支持的浏览器会忽略该声明。
+
 ## [0.3.3] - 2026-10-28
 
 ### Fixed

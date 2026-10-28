@@ -3770,3 +3770,12 @@
     padding: 18px 14px 12px;
   }
 }
+
+/* DSH 宿主会通过 Chrome 139+ 的 corner-shape 给按钮使用 squircle；
+   插件内恢复我们自己的圆角语义（正圆/普通圆角）。 */
+.wa-root,
+.wa-root *,
+.wa-root *::before,
+.wa-root *::after {
+  corner-shape: round;
+}
