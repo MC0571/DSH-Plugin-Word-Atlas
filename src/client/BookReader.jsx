@@ -190,7 +190,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   const savedRef = useRef({ at: 0, pid: '', pct: 0 })
 
   const chapter = chapterState.status === 'ready' ? chapterState.data : null
-  const queue = useMemo(() => (chapter ? buildSentenceQueue(chapter, prefs.language) : []), [chapter, prefs.language])
+
   const activeItem = active >= 0 ? queue[active] : null
   const activeSentenceId = activeItem?.domId || ''
   const wordIds = useMemo(() => (chapter ? chapterWordIds(chapter) : []), [chapter])
@@ -199,7 +199,13 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
     [wordIds, atlas],
   )
   const nextChapter = book.chapters.find((item) => item.n === meta.n + 1 && item.ready)
-  const zhAudio = useMemo(() => (chapter?.paras || []).some((paragraph) => paragraph.audioZh), [chapter])
+  const narration = useMemo(() => {
+    const en = Boolean(chapter?.paras?.some((paragraph) => paragraph.audio && paragraph.sents?.length))
+    const zh = Boolean(chapter?.paras?.some((paragraph) => paragraph.audioZh && paragraph.zhSents?.length))
+    return { en, zh }
+  }, [chapter])
+  const language = prefs.language === 'zh' && !narration.zh ? 'en' : prefs.language === 'en' && !narration.en ? 'zh' : prefs.language
+  const queue = useMemo(() => (chapter ? buildSentenceQueue(chapter, language) : []), [chapter, language])
   const isDone = Boolean(progress.readings?.[chapterKey(book.id, meta.n)]?.done)
 
   useEffect(() => {
@@ -209,6 +215,25 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = prefs.speed
   }, [prefs.speed])
+
+  useEffect(() => {
+    if (!chapter) return
+    if (!narration.en && narration.zh && prefs.language === 'en') {
+      setPrefs((current) => normalizeReaderPrefs({ ...current, language: 'zh' }))
+    } else if (narration.en && !narration.zh && prefs.language === 'zh') {
+      setPrefs((current) => normalizeReaderPrefs({ ...current, language: 'en' }))
+    }
+  }, [chapter, narration.en, narration.zh, prefs.language])
+
+  // 与官方一致：切到「英文/中文」阅读方式时自动同步朗读语言（中英对照不强制）。
+  useEffect(() => {
+    if (!chapter) return
+    if (prefs.mode === 'zh' && language !== 'zh' && narration.zh) {
+      setPrefs((current) => normalizeReaderPrefs({ ...current, language: 'zh' }))
+    } else if (prefs.mode === 'en' && language !== 'en' && narration.en) {
+      setPrefs((current) => normalizeReaderPrefs({ ...current, language: 'en' }))
+    }
+  }, [chapter, prefs.mode, language, narration.en, narration.zh])
 
   useEffect(() => {
     onReaderFocus?.(true)
@@ -238,7 +263,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
     setActive(-1)
     setPlaying(false)
     setNotice('')
-  }, [book.id, meta.n, prefs.language])
+  }, [book.id, meta.n, language])
 
   useEffect(
     () => () => {
@@ -439,10 +464,17 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
   }
 
   const playSentence = (pid, index, lang) => {
-    if (lang !== prefs.language) return
+    if (lang !== language) return
     const target = queue.findIndex((item) => item.pid === pid && item.sentenceIndex === index)
     if (target >= 0) playAt(target)
   }
+
+  const listenEn = activeItem ? (activeItem.lang === 'en' ? activeItem.text : activeItem.translation) : chapter?.paras?.[0]?.en || ''
+  const listenZh = activeItem ? (activeItem.lang === 'zh' ? activeItem.text : activeItem.translation) : chapter?.paras?.[0]?.zh || ''
+  const listenLang = prefs.mode === 'zh' ? 'zh' : prefs.mode === 'en' ? 'en' : language
+  const listenPrimary =
+    prefs.mode === 'zh' ? listenZh || listenEn : prefs.mode === 'en' ? listenEn || listenZh : activeItem?.text || listenEn || listenZh
+  const listenSecondary = prefs.mode === 'bi' ? activeItem?.translation || '' : ''
 
   const onTimeUpdate = (event) => {
     if (!queue.length) return
@@ -518,6 +550,20 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
           <strong>{meta.labelZh}</strong>
         </div>
         <div className="wa-book-tools">
+          {total ? (
+            <button
+              type="button"
+              className="wa-icon-btn"
+              aria-label="聆听模式"
+              title="聆听模式"
+              onClick={() => {
+                setListening(true)
+                if (!playing) playAt(active >= 0 ? active : 0)
+              }}
+            >
+              <Icon name="headphones" size={19} />
+            </button>
+          ) : null}
           <button
             type="button"
             className="wa-icon-btn"
@@ -567,10 +613,18 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
             </div>
             <div className="wa-book-setting">
               <span>朗读语言</span>
-              <div className="wa-book-seg">
-                <button type="button" aria-pressed={prefs.language === 'en'} onClick={() => updatePrefs({ language: 'en' })}>英文</button>
-                <button type="button" aria-pressed={prefs.language === 'zh'} disabled={!zhAudio} onClick={() => updatePrefs({ language: 'zh' })}>中文</button>
-              </div>
+              {prefs.mode === 'bi' && narration.en && narration.zh ? (
+                <div className="wa-book-seg">
+                  <button type="button" aria-pressed={language === 'en'} onClick={() => updatePrefs({ language: 'en' })}>英文</button>
+                  <button type="button" aria-pressed={language === 'zh'} onClick={() => updatePrefs({ language: 'zh' })}>中文</button>
+                </div>
+              ) : (
+                <p className="wa-book-settings-hint">
+                  {prefs.mode === 'bi'
+                    ? `本章只有${narration.en ? '英文' : narration.zh ? '中文' : '暂无'}朗读音频。`
+                    : `跟随「${prefs.mode === 'zh' ? '中文' : '英文'}」阅读方式朗读${prefs.mode === 'zh' && !narration.zh ? '（本章暂无中文音频，使用英文）' : ''}。`}
+                </p>
+              )}
             </div>
             <p className="wa-book-settings-hint">阅读模式与字号会记住；空格播放/暂停，左右方向键切换句子。</p>
           </div>
@@ -619,7 +673,7 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
                 paragraph={paragraph}
                 mode={prefs.mode}
                 activeId={activeSentenceId}
-                audioLang={prefs.language}
+                audioLang={language}
                 onWord={openWord}
                 onPlay={playSentence}
               />
@@ -679,11 +733,16 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
             </button>
             <div className="wa-book-player-count">
               <span>{active + 1} / {total}</span>
-              <small>{loadingAudio ? '正在准备声音' : playing ? `${prefs.language === 'zh' ? '中文' : '英文'}朗读` : '从本句继续'}</small>
+              <small>{loadingAudio ? '正在准备声音' : playing ? `${language === 'zh' ? '中文' : '英文'}朗读` : '从本句继续'}</small>
             </div>
             <button type="button" className={`wa-book-follow ${follow ? 'is-on' : ''}`} onClick={() => setFollow((value) => !value)}>
               {follow ? '跟随' : '已暂停滚动'}
             </button>
+            {prefs.mode === 'bi' && narration.en && narration.zh ? (
+              <button type="button" className="wa-book-speed" onClick={() => updatePrefs({ language: language === 'en' ? 'zh' : 'en' })} aria-label="切换朗读语言">
+                {language === 'en' ? 'EN' : '中'}
+              </button>
+            ) : null}
             <button type="button" className="wa-book-speed" onClick={cycleSpeed} aria-label={`朗读速度 ${prefs.speed} 倍`}>{prefs.speed}×</button>
             <button type="button" className="wa-book-listen-btn" onClick={() => { setListening(true); if (!playing) playAt(active >= 0 ? active : 0) }}>
               聆听
@@ -718,18 +777,23 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
           {meta.plate ? <div className="wa-book-listen-bg" style={{ backgroundImage: `url(${readAssetUrl(meta.plate)})` }} aria-hidden="true" /> : null}
           <div className="wa-book-listen-veil" aria-hidden="true" />
           <header className="wa-book-listen-top">
+            <button type="button" className="wa-book-listen-back" onClick={() => setListening(false)}>
+              <Icon name="chevronLeft" size={17} /> 返回阅读
+            </button>
             <p>{book.titleZh} · {meta.labelZh}{meta.titleZh ? ` · ${meta.titleZh}` : ''}</p>
-            <div>
-              <button type="button" className="wa-icon-btn" onClick={() => setListening(false)} aria-label="关闭聆听模式">
-                <Icon name="close" size={18} />
-              </button>
+            <div className="wa-book-listen-modes" role="group" aria-label="阅读方式">
+              {MODE_LABELS.map(([value, label]) => (
+                <button key={value} type="button" aria-pressed={prefs.mode === value} onClick={() => updatePrefs({ mode: value })}>
+                  {label}
+                </button>
+              ))}
             </div>
           </header>
           <div className="wa-book-listen-body">
-            <p className="wa-book-listen-text" lang={prefs.language === 'zh' ? 'zh' : 'en'}>
-              {activeItem?.text || chapter.paras?.[0]?.en || ''}
+            <p className="wa-book-listen-text" lang={listenLang}>
+              {listenPrimary}
             </p>
-            {activeItem?.translation ? <p className="wa-book-listen-zh">{activeItem.translation}</p> : null}
+            {listenSecondary ? <p className="wa-book-listen-zh">{listenSecondary}</p> : null}
           </div>
           <footer className="wa-book-listen-controls">
             <button type="button" className="wa-icon-btn" onClick={() => stepSentence(-1)} disabled={active <= 0} aria-label="上一句">
@@ -742,6 +806,11 @@ export function BookReader({ atlas, progress, book, meta, restorePid, onBack, on
               <Icon name="chevronRight" size={22} />
             </button>
             <span className="wa-book-listen-count">{active + 1} / {total}</span>
+            {prefs.mode === 'bi' && narration.en && narration.zh ? (
+              <button type="button" className="wa-book-speed" onClick={() => updatePrefs({ language: language === 'en' ? 'zh' : 'en' })} aria-label="切换朗读语言">
+                {language === 'en' ? 'EN' : '中'}
+              </button>
+            ) : null}
             <button type="button" className="wa-book-speed" onClick={cycleSpeed}>{prefs.speed}×</button>
           </footer>
         </div>
