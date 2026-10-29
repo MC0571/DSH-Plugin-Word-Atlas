@@ -191,68 +191,175 @@ function Intro({ atlas, progress, step, onOpenWord }) {
 }
 
 function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
-  const [value, setValue] = useState('')
-  const input = useRef(null)
-  const composing = useRef(false)
   const target = entry.w
-  const prefix = target.slice(0, hints)
-  const cell = target.length > 12 ? 32 : 38
+  const chars = React.useMemo(() => Array.from(target), [target])
+  const inputIndices = React.useMemo(() => chars.map((char, index) => (char === ' ' ? -1 : index)).filter((index) => index >= 0), [chars])
+  const [letters, setLetters] = useState(() => chars.map(() => ''))
+  const lettersRef = useRef(letters)
+  lettersRef.current = letters
+  const refs = useRef([])
+  const composing = useRef(null)
+  const targetRef = useRef(target)
+  targetRef.current = target
+
+  const focusAt = (charIndex) => {
+    const found = inputIndices.find((index) => index >= charIndex)
+    const next = found === undefined ? inputIndices[inputIndices.length - 1] : found
+    if (next !== undefined) refs.current[next]?.focus()
+  }
 
   useEffect(() => {
-    if (hints && !value.toLowerCase().startsWith(prefix.toLowerCase())) {
-      setValue(prefix)
-      if (input.current) input.current.value = prefix
-    }
-    input.current?.focus()
-  }, [hints]) // eslint-disable-line react-hooks/exhaustive-deps
+    const empty = chars.map(() => '')
+    lettersRef.current = empty
+    setLetters(empty)
+    refs.current.forEach((element) => {
+      if (element) element.value = ''
+    })
+    focusAt(0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target])
 
+  useEffect(() => {
+    if (!hints) return
+    const next = [...lettersRef.current]
+    for (let index = 0; index < Math.min(hints, chars.length); index += 1) {
+      next[index] = chars[index] === ' ' ? ' ' : chars[index]
+    }
+    writeLetters(next)
+    chars.forEach((char, index) => {
+      if (index < hints && char !== ' ' && refs.current[index]) refs.current[index].value = char
+    })
+    const firstEmpty = chars.findIndex((char, index) => index >= hints && char !== ' ')
+    focusAt(firstEmpty === -1 ? chars.length : firstEmpty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hints])
+
+  const writeLetters = (next) => {
+    lettersRef.current = next
+    setLetters(next)
+  }
+
+  const handleInput = (index, raw) => {
+    if (pending) return
+    const text = String(raw || '').replace(/\s+/g, '')
+    if (text.length > 1) {
+      const start = inputIndices.indexOf(index)
+      const slots = inputIndices.slice(start, start + text.length)
+      const next = [...lettersRef.current]
+      slots.forEach((slot, offset) => {
+        const char = text[offset] || ''
+        next[slot] = char
+        if (refs.current[slot]) refs.current[slot].value = char
+      })
+      writeLetters(next)
+      if (slots.length) focusAt(slots[slots.length - 1] + 1)
+      return
+    }
+    if (!text) {
+      const next = [...lettersRef.current]
+      next[index] = ''
+      writeLetters(next)
+      return
+    }
+    const char = text.slice(-1)
+    if (!/^[A-Za-zÀ-ÿ'’-]$/.test(char)) {
+      if (refs.current[index]) refs.current[index].value = ''
+      return
+    }
+    const next = [...lettersRef.current]
+    next[index] = char
+    writeLetters(next)
+    const position = inputIndices.indexOf(index)
+    if (position >= 0 && position < inputIndices.length - 1) focusAt(inputIndices[position + 1])
+  }
+
+  const onKeyDown = (index, event) => {
+    if (composing.current !== null) return
+    if (event.key === 'Backspace' && !event.currentTarget.value) {
+      const position = inputIndices.indexOf(index)
+      if (position > 0) {
+        event.preventDefault()
+        const previous = inputIndices[position - 1]
+        const next = [...lettersRef.current]
+        next[previous] = ''
+        writeLetters(next)
+        if (refs.current[previous]) {
+          refs.current[previous].value = ''
+          refs.current[previous].focus()
+        }
+      }
+    } else if (event.key === 'ArrowLeft' && event.currentTarget.selectionStart === 0) {
+      const position = inputIndices.indexOf(index)
+      if (position > 0) {
+        event.preventDefault()
+        refs.current[inputIndices[position - 1]]?.focus()
+      }
+    } else if (event.key === 'ArrowRight' && event.currentTarget.selectionStart === event.currentTarget.value.length) {
+      const position = inputIndices.indexOf(index)
+      if (position >= 0 && position < inputIndices.length - 1) {
+        event.preventDefault()
+        refs.current[inputIndices[position + 1]]?.focus()
+      }
+    }
+  }
+
+  const value = chars.map((char, index) => (char === ' ' ? ' ' : letters[index] || '')).join('')
+  const filled = inputIndices.every((index) => letters[index])
   return (
     <form
       className="wa-spell"
       onSubmit={(event) => {
         event.preventDefault()
-        if (composing.current || event.nativeEvent?.isComposing) return
-        if (!pending && value.trim()) onSubmit(value)
+        if (composing.current !== null || event.nativeEvent?.isComposing) return
+        if (!pending && filled) onSubmit(value)
       }}
     >
-      <label className="wa-spell-label" htmlFor="wa-spell-field">
-        拼写 · {target.length} 个字母
-      </label>
-      <input
-        id="wa-spell-field"
-        ref={input}
-        className="wa-spell-field"
-        style={{
-          '--count': target.length,
-          '--cell': `${cell}px`,
-          width: `calc(${target.length * cell}px + 3px)`,
-        }}
-        defaultValue="" 
-        onChange={(event) => {
-          if (!pending) setValue(event.target.value)
-        }}
-        onCompositionStart={() => {
-          composing.current = true
-        }}
-        onCompositionEnd={(event) => {
-          composing.current = false
-          if (!pending) setValue(event.currentTarget.value)
-        }}
-        autoFocus
-        autoCapitalize="off"
-        autoCorrect="off"
-        autoComplete="off"
-        spellCheck={false}
-        enterKeyHint="done"
-        aria-label={`拼写，${target.length} 个字符`}
-        readOnly={Boolean(pending)}
-      />
+      <span className="wa-spell-label">拼写 · {inputIndices.length} 个字母</span>
+      <div className="wa-spell-cells" onClick={() => focusAt(0)}>
+        {chars.map((char, index) => {
+          if (char === ' ') return <span key={`space-${index}`} className="wa-spell-gap" aria-hidden="true" />
+          const letter = letters[index]
+          const ok = letter && letter.toLowerCase() === char.toLowerCase()
+          return (
+            <input
+              key={index}
+              ref={(element) => {
+                refs.current[index] = element
+              }}
+              className={`wa-spell-cell ${letter ? (pending ? (ok ? 'is-ok' : 'is-bad') : 'is-filled') : ''}`}
+              defaultValue=""
+              maxLength={1}
+              inputMode="text"
+              autoCapitalize="off"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              readOnly={Boolean(pending)}
+              aria-label={`第 ${index + 1} 个字母，共 ${inputIndices.length} 个`}
+              onFocus={(event) => event.currentTarget.select()}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => {
+                if (composing.current !== null) return
+                handleInput(index, event.target.value)
+              }}
+              onCompositionStart={() => {
+                composing.current = index
+              }}
+              onCompositionEnd={(event) => {
+                composing.current = null
+                handleInput(index, event.currentTarget.value)
+              }}
+              onKeyDown={(event) => onKeyDown(index, event)}
+            />
+          )
+        })}
+      </div>
       {!pending ? (
         <div className="wa-spell-actions">
-          <button type="button" className="wa-btn wa-btn-ghost" onClick={onHint} disabled={hints >= target.length - 1}>
+          <button type="button" className="wa-btn wa-btn-ghost" onClick={onHint} disabled={hints >= chars.length - 1}>
             <Icon name="sparkle" size={15} /> 提示字母
           </button>
-          <button type="submit" className="wa-btn wa-btn-primary" disabled={!value.trim()}>
+          <button type="submit" className="wa-btn wa-btn-primary" disabled={!filled}>
             确认 <kbd>Enter</kbd>
           </button>
         </div>
