@@ -65,7 +65,7 @@ function LearnBar({ progress, value, total, count, onExit, label = '今日学习
     <header className="wa-learn-bar">
       <div className="wa-learn-bar-inner">
         <button type="button" className="wa-btn wa-btn-ghost wa-learn-exit" onClick={onExit} aria-label="退出学习">
-          <Icon name="close" size={16} /> 退出
+          退出
         </button>
         <div className="wa-learn-bar-center">
           <span className="wa-learn-bar-title">{label}</span>
@@ -205,7 +205,6 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
     input.current?.focus()
   }, [hints]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shown = pending ? pending.value : value
   return (
     <form
       className="wa-spell"
@@ -215,24 +214,15 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
         if (!pending && value.trim()) onSubmit(value)
       }}
     >
-      <div className="wa-slots" aria-hidden="true" onClick={() => input.current?.focus()}>
-        {Array.from(target).map((character, index) => {
-          const typed = shown[index]
-          const ok = typed !== undefined && typed.toLowerCase() === character.toLowerCase()
-          return (
-            <span
-              key={index}
-              className={`wa-slot ${character === ' ' ? 'is-space' : ''} ${typed !== undefined ? (pending ? (ok ? 'is-ok' : 'is-bad') : 'is-filled') : ''} ${!pending && index === shown.length ? 'is-caret' : ''}`}
-            >
-              {pending && !pending.correct ? character : typed ?? ''}
-            </span>
-          )
-        })}
-      </div>
+      <label className="wa-spell-label" htmlFor="wa-spell-field">
+        拼写 · {target.length} 个字母
+      </label>
       <input
+        id="wa-spell-field"
         ref={input}
-        className="wa-spell-input"
+        className="wa-spell-field"
         defaultValue=""
+        placeholder={`输入 ${target.length} 个字母`}
         onChange={(event) => {
           if (!pending) setValue(event.target.value)
         }}
