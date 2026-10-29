@@ -8,6 +8,14 @@
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-10-29
+
+### Changed
+
+- 复习引导页移除顶部装饰圆形图标（sparkle/orbit）；
+- 移除底部「复习进度会自动保存到本机 $DSH_HOME/word-atlas-dsh/progress.json」提示；
+  保存逻辑不变。
+
 ## [0.5.7] - 2026-10-28
 
 ### Changed / Fixed
