@@ -6425,3 +6425,76 @@
   line-height: 1.7;
   text-align: center;
 }
+
+/* -------------------------------------- v0.6.1 spelling input polish */
+
+.wa-quiz-spell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.wa-quiz-spell > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.wa-quiz-spell .wa-spell-art {
+  width: min(240px, 56vw);
+  max-height: 240px;
+  object-fit: cover;
+}
+
+.wa-quiz-spell .wa-cloze {
+  text-align: center;
+}
+
+.wa-spell {
+  width: 100%;
+  align-items: center;
+}
+
+.wa-slots {
+  width: 100%;
+  justify-content: center;
+}
+
+.wa-slot {
+  width: 40px;
+  height: 48px;
+  border: 1.5px solid var(--wa-line-strong);
+  background: var(--dsw-alias-bg-layer-2, var(--wa-surface-2));
+  color: var(--dsw-alias-label-primary);
+  font-size: 20px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
+}
+
+.wa-slot.is-space {
+  width: 18px;
+}
+
+.wa-slot.is-filled {
+  border-color: var(--dsw-alias-brand-primary);
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 7%, var(--dsw-alias-bg-layer-2, var(--wa-surface-2)));
+}
+
+.wa-slot.is-caret {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent);
+}
+
+.wa-spell-actions {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .wa-slot {
+    width: 34px;
+    height: 42px;
+    font-size: 18px;
+  }
+}

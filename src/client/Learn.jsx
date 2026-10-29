@@ -193,11 +193,15 @@ function Intro({ atlas, progress, step, onOpenWord }) {
 function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
   const [value, setValue] = useState('')
   const input = useRef(null)
+  const composing = useRef(false)
   const target = entry.w
   const prefix = target.slice(0, hints)
 
   useEffect(() => {
-    if (hints && !value.toLowerCase().startsWith(prefix.toLowerCase())) setValue(prefix)
+    if (hints && !value.toLowerCase().startsWith(prefix.toLowerCase())) {
+      setValue(prefix)
+      if (input.current) input.current.value = prefix
+    }
     input.current?.focus()
   }, [hints]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -207,6 +211,7 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
       className="wa-spell"
       onSubmit={(event) => {
         event.preventDefault()
+        if (composing.current || event.nativeEvent?.isComposing) return
         if (!pending && value.trim()) onSubmit(value)
       }}
     >
@@ -227,8 +232,17 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
       <input
         ref={input}
         className="wa-spell-input"
-        value={shown}
-        onChange={(event) => !pending && setValue(event.target.value.slice(0, target.length + 6))}
+        defaultValue=""
+        onChange={(event) => {
+          if (!pending) setValue(event.target.value)
+        }}
+        onCompositionStart={() => {
+          composing.current = true
+        }}
+        onCompositionEnd={(event) => {
+          composing.current = false
+          if (!pending) setValue(event.currentTarget.value)
+        }}
         autoFocus
         autoCapitalize="off"
         autoCorrect="off"
