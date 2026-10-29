@@ -6605,3 +6605,61 @@
     font-size: 19px;
   }
 }
+
+/* --------------------------------- v0.6.4 per-letter native input cells */
+
+.wa-spell-cells {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.wa-spell-cell {
+  width: 40px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--wa-line-strong);
+  border-radius: 10px;
+  outline: none;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  caret-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wa-spell-cell:focus {
+  border-color: var(--dsw-alias-label-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-label-primary) 18%, transparent);
+}
+
+.wa-spell-cell.is-filled {
+  border-color: var(--wa-line-strong);
+}
+
+.wa-spell-cell.is-ok {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-success-primary) 65%, transparent);
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.wa-spell-cell.is-bad {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 65%, transparent);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.wa-spell-gap {
+  width: 14px;
+}
+
+@media (max-width: 560px) {
+  .wa-spell-cell {
+    width: 34px;
+    height: 42px;
+    font-size: 19px;
+  }
+}
