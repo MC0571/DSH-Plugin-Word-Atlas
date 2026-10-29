@@ -196,6 +196,7 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
   const composing = useRef(false)
   const target = entry.w
   const prefix = target.slice(0, hints)
+  const cell = target.length > 12 ? 32 : 38
 
   useEffect(() => {
     if (hints && !value.toLowerCase().startsWith(prefix.toLowerCase())) {
@@ -221,8 +222,12 @@ function SpellInput({ entry, pending, hints, onHint, onSubmit }) {
         id="wa-spell-field"
         ref={input}
         className="wa-spell-field"
-        defaultValue=""
-        placeholder={`输入 ${target.length} 个字母`}
+        style={{
+          '--count': target.length,
+          '--cell': `${cell}px`,
+          width: `calc(${target.length * cell}px + 3px)`,
+        }}
+        defaultValue="" 
         onChange={(event) => {
           if (!pending) setValue(event.target.value)
         }}

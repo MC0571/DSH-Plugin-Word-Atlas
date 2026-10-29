@@ -6554,3 +6554,54 @@
     font-size: 21px;
   }
 }
+
+/* ------------------------------ v0.6.3 spell input: per-letter boxes */
+
+.wa-spell-field {
+  --cell: 38px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: 52px;
+  padding: 0;
+  border: 1.5px solid var(--wa-line-strong);
+  text-indent: calc((var(--cell) - 1ch) / 2);
+  border-radius: 11px;
+  outline: none;
+  background-color: var(--wa-surface-2);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--dsw-alias-bg-base) 0 calc(var(--cell) - 4px),
+    transparent calc(var(--cell) - 4px) var(--cell)
+  );
+  background-origin: content-box;
+  background-clip: content-box;
+  color: var(--dsw-alias-label-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: calc(var(--cell) - 1ch);
+  text-align: left;
+  caret-color: var(--dsw-alias-brand-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wa-spell-field::placeholder {
+  display: none;
+}
+
+.wa-spell-field:focus {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dsw-alias-brand-primary) 16%, transparent);
+}
+
+.wa-spell-field[readonly] {
+  opacity: 0.85;
+}
+
+@media (max-width: 560px) {
+  .wa-spell-field {
+    height: 46px;
+    font-size: 19px;
+  }
+}
