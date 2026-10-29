@@ -6498,3 +6498,59 @@
     font-size: 18px;
   }
 }
+
+/* ------------------------------------ v0.6.2 native spelling input */
+
+.wa-spell {
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+}
+
+.wa-spell-label {
+  color: var(--wa-muted);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+}
+
+.wa-spell-field {
+  width: min(440px, 100%);
+  height: 56px;
+  padding: 0 18px;
+  border: 2px solid var(--wa-line-strong);
+  border-radius: 14px;
+  outline: none;
+  background: var(--dsw-alias-bg-layer-2, var(--wa-surface-2));
+  color: var(--dsw-alias-label-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-align: center;
+  caret-color: var(--dsw-alias-brand-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wa-spell-field::placeholder {
+  color: color-mix(in srgb, var(--dsw-alias-label-primary) 32%, transparent);
+  font-family: system-ui, 'PingFang SC', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.wa-spell-field:focus {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dsw-alias-brand-primary) 16%, transparent);
+}
+
+.wa-spell-field[readonly] {
+  opacity: 0.85;
+}
+
+@media (max-width: 560px) {
+  .wa-spell-field {
+    height: 50px;
+    font-size: 21px;
+  }
+}
