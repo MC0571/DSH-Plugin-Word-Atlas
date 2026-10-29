@@ -175,14 +175,15 @@ export function App() {
     if (!atlas) return
     const active = progress.session && !progress.session.finished
     if (active) {
-      setLearnContext({ mode: progress.session.mode === 'review' ? 'review' : 'today', returnView: 'review' })
-      setView('learn')
+      if (progress.session.mode === 'review') {
+        setLearnContext({ mode: 'review', returnView: 'review' })
+        setView('learn')
+      }
       return
     }
-    const session = {
-      ...buildSession(atlas, progress, progress.settings, { ...options, reviewOnly: true }),
-      mode: 'review',
-    }
+    const built = buildSession(atlas, progress, progress.settings, { ...options, reviewOnly: true })
+    const steps = built.steps.filter((step) => step.kind !== 'intro')
+    const session = { ...built, steps, mode: 'review' }
     if (session.steps.length === 0) return
     update((state) => ({ ...state, session }))
     setLearnContext({ mode: 'review', returnView: 'review' })
