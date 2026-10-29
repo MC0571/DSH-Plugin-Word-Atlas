@@ -6416,3 +6416,12 @@
     flex-direction: column;
   }
 }
+
+.wa-review-note {
+  margin: 14px 0 0;
+  max-width: 560px;
+  color: var(--wa-muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+  text-align: center;
+}
