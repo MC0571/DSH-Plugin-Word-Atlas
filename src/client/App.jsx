@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { loadAtlas } from './data.js'
 import { bumpDay, hydrate, streak, toggleBookmark as toggleBookmarkState, update, useProgress } from './store.js'
 import { Rating, review } from './fsrs.js'
-import { buildSession, newToday } from './session.js'
+import { buildSession, dueIds, newToday } from './session.js'
 import { DetailModal } from './Detail.jsx'
 import { WordGrid } from './Browse.jsx'
 import { ReviewView } from './Review.jsx'
@@ -190,6 +190,44 @@ export function App() {
     setView('learn')
   }
 
+  const resumeSession = () => {
+    if (!progress.session || progress.session.finished) return
+    const mode = progress.session.mode === 'review' ? 'review' : 'today'
+    setLearnContext({ mode, returnView: 'review' })
+    setView('learn')
+  }
+
+  /** 自由复习已学词：优先错词/低稳定度，最多 20 个，仍走 Learn 测验。 */
+  const startFreeReview = () => {
+    if (!atlas) return
+    const active = progress.session && !progress.session.finished
+    if (active) {
+      resumeSession()
+      return
+    }
+    const dueSet = new Set(dueIds(progress))
+    const learned = Object.keys(progress.cards).filter((id) => atlas.byId.has(id))
+    const pool = learned.filter((id) => !dueSet.has(id))
+    if (!pool.length) return
+    const mistakes = new Set(progress.mistakes)
+    const ranked = [...pool].sort((a, b) => {
+      const am = mistakes.has(a) ? 0 : 1
+      const bm = mistakes.has(b) ? 0 : 1
+      if (am !== bm) return am - bm
+      const ac = progress.cards[a] || {}
+      const bc = progress.cards[b] || {}
+      return (ac.s ?? 0) - (bc.s ?? 0) || (ac.due ?? 0) - (bc.due ?? 0)
+    })
+    const ids = ranked.slice(0, 20)
+    const built = buildSession(atlas, progress, progress.settings, { ids })
+    const steps = built.steps.filter((step) => step.kind !== 'intro')
+    const session = { ...built, steps, mode: 'review', free: true }
+    if (!session.steps.length) return
+    update((state) => ({ ...state, session }))
+    setLearnContext({ mode: 'review', returnView: 'review' })
+    setView('learn')
+  }
+
   const restartLearn = (options = {}) => {
     if (learnContext.mode === 'review') {
       if (learnContext.returnView === 'review') startReview(options)
@@ -344,7 +382,14 @@ export function App() {
         ) : view === 'practice' ? (
           <Practice atlas={atlas} progress={progress} />
         ) : view === 'review' ? (
-          <ReviewView atlas={atlas} progress={progress} onStart={startReview} />
+          <ReviewView
+            atlas={atlas}
+            progress={progress}
+            onStart={startReview}
+            onFreeReview={startFreeReview}
+            onResume={resumeSession}
+            onGoToday={() => setView('today')}
+          />
         ) : view === 'settings' ? (
           <Settings atlas={atlas} progress={progress} onOpenWord={pushWord} />
         ) : view === 'bookmarks' ? (

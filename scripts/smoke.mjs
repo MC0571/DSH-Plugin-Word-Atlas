@@ -140,6 +140,31 @@ assert.ok(html.includes('library'))
 html = render(React.createElement(testSurface.ReviewView, { atlas: fixtureAtlas, progress: fixtureProgress, onExit() {} }), 'ReviewView')
 assert.ok(html.includes('今日复习'))
 
+const futureCard = { due: Date.now() + 86400000, s: 3, d: 5, reps: 2, lapses: 0, st: 2, last: Date.now() - 86400000 }
+const learnedProgress = {
+  ...fixtureProgress,
+  cards: Object.fromEntries(fixtureAtlas.words.map((word) => [word.id, futureCard])),
+}
+html = render(React.createElement(testSurface.ReviewView, { atlas: fixtureAtlas, progress: learnedProgress, onStart() {} }), 'ReviewView free')
+assert.ok(html.includes('自由复习已学词'))
+
+const activeTodayProgress = {
+  ...fixtureProgress,
+  session: {
+    id: 'active-today',
+    started: Date.now(),
+    steps: [{ id: 'library', kind: 'intro' }],
+    index: 0,
+    graded: {},
+    newIds: ['library'],
+    reviewIds: [],
+    mode: 'today',
+  },
+}
+html = render(React.createElement(testSurface.ReviewView, { atlas: fixtureAtlas, progress: activeTodayProgress, onStart() {} }), 'ReviewView active')
+assert.ok(html.includes('继续当前学习'))
+assert.ok(html.includes('返回今日'))
+
 const dueNow = Date.now() - 1000
 const reviewProgress = {
   ...fixtureProgress,
