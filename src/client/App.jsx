@@ -61,6 +61,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [readingTarget, setReadingTarget] = useState(null)
   const [readerFocus, setReaderFocus] = useState(false)
+  const [learnContext, setLearnContext] = useState({ mode: 'today', returnView: 'today' })
   const progress = useProgress()
   const rootRef = useRef(null)
   useTitlebarInset(rootRef, view)
@@ -153,17 +154,48 @@ export function App() {
   const startLearn = (options = {}) => {
     if (!atlas) return
     const hasActive = progress.session && !progress.session.finished
+    const mode = options.reviewOnly ? 'review' : 'today'
     if (hasActive && !options.ids && !options.reviewOnly && !options.extra) {
+      setLearnContext({ mode: progress.session.mode === 'review' ? 'review' : 'today', returnView: 'today' })
       setView('learn')
       return
     }
     const settings = options.extra
       ? { ...progress.settings, dailyNew: newToday(progress) + options.extra }
       : progress.settings
-    const session = buildSession(atlas, progress, settings, options)
+    const session = { ...buildSession(atlas, progress, settings, options), mode }
     if (session.steps.length === 0) return
     update((state) => ({ ...state, session }))
+    setLearnContext({ mode, returnView: 'today' })
     setView('learn')
+  }
+
+  /** 复习入口：只取到期词，复用 Learn 的主动回忆测验与自动 FSRS 评分。 */
+  const startReview = (options = {}) => {
+    if (!atlas) return
+    const active = progress.session && !progress.session.finished
+    if (active) {
+      setLearnContext({ mode: progress.session.mode === 'review' ? 'review' : 'today', returnView: 'review' })
+      setView('learn')
+      return
+    }
+    const session = {
+      ...buildSession(atlas, progress, progress.settings, { ...options, reviewOnly: true }),
+      mode: 'review',
+    }
+    if (session.steps.length === 0) return
+    update((state) => ({ ...state, session }))
+    setLearnContext({ mode: 'review', returnView: 'review' })
+    setView('learn')
+  }
+
+  const restartLearn = (options = {}) => {
+    if (learnContext.mode === 'review') {
+      if (learnContext.returnView === 'review') startReview(options)
+      else startLearn({ ...options, reviewOnly: true })
+      return
+    }
+    startLearn(options)
   }
 
   const detailModal = detailWord && atlas ? (
@@ -193,7 +225,14 @@ export function App() {
   if (view === 'learn' && atlas) {
     return (
       <div className="wa-root wa-root-focus" ref={rootRef}>
-        <Learn atlas={atlas} progress={progress} onExit={() => setView('today')} onRestart={startLearn} onOpenWord={pushWord} />
+        <Learn
+          atlas={atlas}
+          progress={progress}
+          label={learnContext.mode === 'review' ? '今日复习' : '今日学习'}
+          onExit={() => setView(learnContext.returnView)}
+          onRestart={restartLearn}
+          onOpenWord={pushWord}
+        />
         {detailModal}
       </div>
     )
@@ -304,7 +343,7 @@ export function App() {
         ) : view === 'practice' ? (
           <Practice atlas={atlas} progress={progress} />
         ) : view === 'review' ? (
-          <ReviewView atlas={atlas} progress={progress} onExit={() => setView('today')} onOpenWord={pushWord} />
+          <ReviewView atlas={atlas} progress={progress} onStart={startReview} />
         ) : view === 'settings' ? (
           <Settings atlas={atlas} progress={progress} onOpenWord={pushWord} />
         ) : view === 'bookmarks' ? (

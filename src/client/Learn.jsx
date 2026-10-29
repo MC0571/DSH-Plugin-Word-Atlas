@@ -59,7 +59,7 @@ function useKeys(map) {
   }, [])
 }
 
-function LearnBar({ progress, value, total, count, onExit }) {
+function LearnBar({ progress, value, total, count, onExit, label = '今日学习' }) {
   const percent = Math.round(Math.min(1, Math.max(0, progress)) * 100)
   return (
     <header className="wa-learn-bar">
@@ -68,7 +68,7 @@ function LearnBar({ progress, value, total, count, onExit }) {
           <Icon name="close" size={16} /> 退出
         </button>
         <div className="wa-learn-bar-center">
-          <span className="wa-learn-bar-title">今日学习</span>
+          <span className="wa-learn-bar-title">{label}</span>
           <div className="wa-learn-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total || 1} aria-valuenow={value}>
             <span style={{ width: `${percent}%` }} />
           </div>
@@ -512,12 +512,12 @@ function Summary({ atlas, progress, session, onExit, onRestart, onOpenWord }) {
   )
 }
 
-export function Learn({ atlas, progress, onExit, onRestart, onOpenWord }) {
+export function Learn({ atlas, progress, onExit, onRestart, onOpenWord, label = '今日学习' }) {
   useEffect(() => () => stopAllAudio(), [])
   const session = progress.session
   if (!session) {
     return (
-      <LearnShell bar={<LearnBar progress={0} value={0} total={1} count="" onExit={onExit} />} centered>
+      <LearnShell bar={<LearnBar progress={0} value={0} total={1} count="" onExit={onExit} label={label} />} centered>
         <EmptyState icon="sparkle" title="今天没有待学的词">
           <p>可以先回顾图鉴，或者明天再来。</p>
           <button type="button" className="wa-btn wa-btn-primary" onClick={onExit}>
@@ -529,7 +529,7 @@ export function Learn({ atlas, progress, onExit, onRestart, onOpenWord }) {
   }
   if (session.finished || session.index >= session.steps.length) {
     return (
-      <LearnShell bar={<LearnBar progress={1} value={1} total={1} count="完成" onExit={onExit} />} centered>
+      <LearnShell bar={<LearnBar progress={1} value={1} total={1} count="完成" onExit={onExit} label={label} />} centered>
         <Summary atlas={atlas} progress={progress} session={session} onExit={onExit} onRestart={onRestart} onOpenWord={onOpenWord} />
       </LearnShell>
     )
@@ -546,6 +546,7 @@ export function Learn({ atlas, progress, onExit, onRestart, onOpenWord }) {
           total={total}
           count={`${session.index + 1} / ${total}`}
           onExit={onExit}
+          label={label}
         />
       }
     >
