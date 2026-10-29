@@ -140,6 +140,24 @@ assert.ok(html.includes('library'))
 html = render(React.createElement(testSurface.ReviewView, { atlas: fixtureAtlas, progress: fixtureProgress, onExit() {} }), 'ReviewView')
 assert.ok(html.includes('今日复习'))
 
+const dueNow = Date.now() - 1000
+const reviewProgress = {
+  ...fixtureProgress,
+  cards: Object.fromEntries(
+    fixtureAtlas.words.map((word, index) => [
+      word.id,
+      { due: dueNow + index, s: 3, d: 5, reps: 2, lapses: 0, st: 2, last: dueNow - 86400000 },
+    ]),
+  ),
+}
+const reviewSession = testSurface.session.buildSession(fixtureAtlas, reviewProgress, reviewProgress.settings, { reviewOnly: true })
+assert.ok(reviewSession.steps.length > 0)
+assert.ok(reviewSession.steps.every((step) => step.kind !== 'intro'), 'review session must not contain intro cards')
+assert.ok(
+  reviewSession.steps.every((step) => step.kind === 'spell' || (Array.isArray(step.options) && step.options.length > 0)),
+  'every review step must be a test (spell or options quiz)',
+)
+
 html = render(
   React.createElement(testSurface.DetailModal, {
     atlas: fixtureAtlas,

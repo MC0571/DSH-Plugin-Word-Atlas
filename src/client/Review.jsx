@@ -21,6 +21,8 @@ export function ReviewView({ atlas, progress, onStart = () => {} }) {
   }, [atlas, progress])
   const total = Math.min(counts.due, DUE_LIMIT)
   const activeSession = progress.session && !progress.session.finished ? progress.session : null
+  const activeReview = Boolean(activeSession && activeSession.mode === 'review')
+  const activeToday = Boolean(activeSession && activeSession.mode !== 'review')
 
   const setRetention = (value) => {
     update((state) => ({ ...state, settings: { ...state.settings, retention: value } }))
@@ -72,17 +74,24 @@ export function ReviewView({ atlas, progress, onStart = () => {} }) {
       <button
         type="button"
         className="wa-btn wa-btn-primary wa-start-btn"
-        onClick={onStart}
-        disabled={!activeSession && total === 0}
+        onClick={() => {
+          if (!activeToday) onStart()
+        }}
+        disabled={activeToday || (!activeReview && total === 0)}
       >
-        {activeSession
-          ? progress.session.mode === 'review'
-            ? '继续复习'
-            : '继续当前学习'
-          : total > 0
-            ? `开始复习（${total} 个到期词）`
-            : '今天没有到期词'}
+        {activeReview
+          ? '继续复习'
+          : activeToday
+            ? '请先完成当前学习'
+            : total > 0
+              ? `开始复习（${total} 个到期词）`
+              : '今天没有到期词'}
       </button>
+      {activeToday ? (
+        <p className="wa-review-done-hint">
+          当前有进行中的学习会话（含新词介绍），请先在「今日」完成后再复习。
+        </p>
+      ) : null}
       {!activeSession && total === 0 ? (
         <p className="wa-review-done-hint">
           <Icon name="check" size={15} /> 到期词都复习完了，去今日学几个新词吧。
