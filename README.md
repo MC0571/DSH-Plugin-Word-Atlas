@@ -17,9 +17,9 @@
 [![Code: MIT](https://img.shields.io/badge/Code-MIT-17283B?style=flat-square)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/Data-CC_BY_4.0-AD5038?style=flat-square)](THIRD_PARTY_NOTICES.md)
 
-<img src="docs/assets/screens/today.png" alt="词光插件在 DeepSeek Harness 中的今日页：学习计划、连续天数、本周统计与今日一词" width="100%">
+<img src="docs/assets/screens/today.jpg" alt="词光插件运行在 DeepSeek Harness 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
 
-<sub>插件在 DSH 里的今日页：学习计划、连续天数、本周统计与今日一词。</sub>
+<sub>插件运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是词光今日页——学习计划、连续天数、本周统计与今日一词。</sub>
 
 </div>
 
@@ -45,8 +45,8 @@
 
 3. 点「安装」，等进度完成。侧边栏出现「词光」图标后点开即可。
 
-<p align="center"><img src="docs/assets/screens/install.png" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装" width="86%"></p>
-<p align="center"><sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。</sub></p>
+<p align="center"><img src="docs/assets/screens/install.jpg" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装，左侧为 DSH 侧边栏" width="100%"></p>
+<p align="center"><sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。截图保留 DSH 侧边栏，用来说明安装环境。</sub></p>
 
 安装会请求 `danger-full-access` 或审批：插件需要写入自己的目录、进度文件和素材缓存（`$DSH_HOME/word-atlas-dsh/`）。装完后不再额外授权，也不会把学习数据上传到任何服务器。
 

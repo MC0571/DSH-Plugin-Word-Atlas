@@ -27,7 +27,7 @@
 
 ## README 截图（`docs/assets/screens/`）
 
-`docs/assets/screens/today.png` 与 `install.png` 是本插件在 DeepSeek Harness 中的界面截图，
+`docs/assets/screens/today.jpg` 与 `install.jpg` 是本插件在 DeepSeek Harness 中的界面截图，
 仅用于说明本插件；截图中的插画与封面素材来自上游词光（CC BY 4.0，署名同「词光 · Word Atlas 数据」一节）。
 
 ## 图标
