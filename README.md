@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="icon.svg" width="72" alt="词光 · Word Atlas">
+<img src="icon.svg" width="72" alt="词光 for DeepSeek Plugin">
 
-# 词光 · Word Atlas
+# 词光 for DeepSeek Plugin
 
 **在 DeepSeek Harness 里，把雅思单词变成画面。**
 
@@ -19,13 +19,13 @@
 
 <img src="docs/assets/screens/today.jpg" alt="词光插件运行在 DeepSeek Harness 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
 
-<sub>插件运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是词光今日页——学习计划、连续天数、本周统计与今日一词。</sub>
+<sub>词光 for DeepSeek Plugin 运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页——学习计划、连续天数、本周统计与今日一词。</sub>
 
 </div>
 
 ---
 
-词光是 DeepSeek Harness 的雅思词汇插件。点开侧边栏的「词光」，每个词都是一张插画词卡：
+**词光 for DeepSeek Plugin** 是 DeepSeek Harness 的雅思词汇插件。点开侧边栏的「词光」，每个词都是一张插画词卡：
 先看画面理解词义，再听英音美音，然后做主动回忆练习，最后交给 FSRS 在快忘的时候提醒你复习。
 
 **免费开源、无需账号，学习进度只保存在你的电脑上。**
