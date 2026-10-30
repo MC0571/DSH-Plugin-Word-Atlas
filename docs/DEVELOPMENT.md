@@ -52,7 +52,7 @@ cordis.patch.yml  插件清单与默认 Config
   1. `contentDir` 指向的本机词光仓库（`public/atlas/`）
   2. 手动离线包 `<offlineDir>/public/atlas/`
   3. 按需缓存 `<cacheDir>/atlas/`
-  4. 回退到 `mediaBase`（默认官方站点）
+  4. 回退到 `mediaBase`（上游词光站点）
 
 ## 配置
 
@@ -102,11 +102,11 @@ Host 以 `prefix` 方式注册在 `/word-atlas`：
 | `GET /word-atlas/atlas/(img\|thumb)/<id>.webp` | 完整插画 / 缩略图 |
 | `GET /word-atlas/atlas/audio/(uk\|us\|ex\|ex2)/<id>.mp3` | 英音 / 美音 / 例句朗读（支持 Range） |
 | `GET /word-atlas/readings/index.json` | 书房短文索引 |
-| `GET /word-atlas/readings/<id>.json` | 短文正文（本地优先，否则代理官方） |
+| `GET /word-atlas/readings/<id>.json` | 短文正文（本地优先，否则代理上游） |
 | `GET /word-atlas/books/index.json` | 书架索引 |
-| `GET /word-atlas/books/<id>/<chapter>.json` | 书籍章节（本地优先，否则代理官方） |
+| `GET /word-atlas/books/<id>/<chapter>.json` | 书籍章节（本地优先，否则代理上游） |
 | `GET /word-atlas/read-assets/<path>` | 书房封面、插画等静态资源 |
-| `GET /word-atlas/brand/<file>` | 品牌插画（本地优先，否则 302 到官方站点） |
+| `GET /word-atlas/brand/<file>` | 品牌插画（本地优先，否则 302 到上游词光站点） |
 
 ## Agent 工具
 
@@ -139,6 +139,6 @@ Host 以 `prefix` 方式注册在 `/word-atlas`：
 
 ## 已知边界
 
-- 没有 `contentDir` 且未下载离线包时，插画与发音依赖官方站点，网络受限会加载失败。
+- 没有 `contentDir` 且未下载离线包时，插画与发音依赖上游词光站点，网络受限会加载失败。
 - 书房正文与书籍章节不在仓库内，运行时按需代理；无网络时不可读。
 - `locale/` 目前只覆盖插件 meta（标题与描述），界面文案仍是中文。

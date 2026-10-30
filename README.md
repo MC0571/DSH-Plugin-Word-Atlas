@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/hero.jpg" alt="词光 · Word Atlas：把雅思单词，变成画面" width="100%">
+<img src="icon.svg" width="72" alt="词光 · Word Atlas">
 
 # 词光 · Word Atlas
 
@@ -8,12 +8,18 @@
 
 7,298 个雅思词 · 一词一画 · 英美发音 · FSRS 间隔复习 · 进度只留本机
 
-[**安装插件**](#安装)　·　[先在线体验 ↗](https://0xlei.tech/words/)　·　[功能一览](#功能一览)　·　[常见问题](#常见问题)
+社区维护的第三方 DSH 插件 · 非词光官方仓库
+
+[**安装插件**](#安装)　·　[功能一览](#功能一览)　·　[常见问题](#常见问题)　·　[开发文档](docs/DEVELOPMENT.md)
 
 [![Release](https://img.shields.io/github/v/tag/MC0571/DSH-Plugin-Word-Atlas?label=release&style=flat-square)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/tags)
 [![CI](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml)
 [![Code: MIT](https://img.shields.io/badge/Code-MIT-17283B?style=flat-square)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/Data-CC_BY_4.0-AD5038?style=flat-square)](THIRD_PARTY_NOTICES.md)
+
+<img src="docs/assets/screens/today.png" alt="词光插件在 DeepSeek Harness 中的今日页：学习计划、连续天数、本周统计与今日一词" width="100%">
+
+<sub>插件在 DSH 里的今日页：学习计划、连续天数、本周统计与今日一词。</sub>
 
 </div>
 
@@ -24,14 +30,23 @@
 
 **免费开源、无需账号，学习进度只保存在你的电脑上。**
 
+> 本仓库是社区维护的第三方插件，不是词光官方仓库，与词光原作者无隶属关系。词库、插画与发音来自上游开源项目[词光 · Word Atlas](https://github.com/designfuchen/word-atlas)（CC BY 4.0），插件代码以 MIT 授权。
+
 ## 安装
 
-在 Harness 的 `plugin_manager` 里执行：
+**推荐：在 DSH 界面里手动添加。**
 
-```text
-action: install_bundle
-target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
-```
+1. 侧边栏打开「插件」，点右上角「**添加插件**」；
+2. 在输入框粘贴仓库地址：
+
+   ```text
+   https://github.com/MC0571/DSH-Plugin-Word-Atlas
+   ```
+
+3. 点「安装」，等进度完成。侧边栏出现「词光」图标后点开即可。
+
+<p align="center"><img src="docs/assets/screens/install.png" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装" width="86%"></p>
+<p align="center"><sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。</sub></p>
 
 安装会请求 `danger-full-access` 或审批：插件需要写入自己的目录、进度文件和素材缓存（`$DSH_HOME/word-atlas-dsh/`）。装完后不再额外授权，也不会把学习数据上传到任何服务器。
 
@@ -44,8 +59,16 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 | 词卡 | 插画、英美音标、中文释义，点播放能听到发音 |
 | 素材 | 联网时插画和发音按需加载，无需先下载 |
 
-> 还想再确认一下？先打开[线上版](https://0xlei.tech/words/)体验 30 秒，再决定装不装。
-> 本地开发安装：把 `target` 指向本仓库目录即可，见[开发文档](docs/DEVELOPMENT.md)。
+<details>
+<summary><b>用 plugin_manager 安装（脚本 / 自动化）</b></summary>
+
+```text
+action: install_bundle
+target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
+```
+
+本地开发安装把 `target` 指向本仓库目录即可，见[开发文档](docs/DEVELOPMENT.md)。
+</details>
 
 ## 这是什么，适合谁
 
@@ -91,22 +114,7 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 | 录音 | **22,905** 段：英音、美音、例句朗读（1,011 个重点词还有第二条例句录音） |
 | 书房 | **732** 篇分级短文 + 1 本《小王子》（章节 + 朗读音频） |
 
-<table>
-<tr>
-<td width="25%"><img src="docs/assets/words/abandon.webp" alt="abandon 的插画：雪地里一辆抛锚的汽车"></td>
-<td width="25%"><img src="docs/assets/words/resilient.webp" alt="resilient 的插画：被砍断的树桩上长出新的枝叶"></td>
-<td width="25%"><img src="docs/assets/words/wander.webp" alt="wander 的插画：地中海小镇的街巷里有人漫步"></td>
-<td width="25%"><img src="docs/assets/words/courage.webp" alt="courage 的插画：小男孩站在泳池边鼓起勇气"></td>
-</tr>
-<tr>
-<td align="center"><b>abandon</b><br><sub>遗弃 · B2 · society</sub></td>
-<td align="center"><b>resilient</b><br><sub>能复原的 · C1 · society</sub></td>
-<td align="center"><b>wander</b><br><sub>漫步 · B2 · travel</sub></td>
-<td align="center"><b>courage</b><br><sub>勇气 · B1 · emotion</sub></td>
-</tr>
-</table>
-
-**词库从哪里来。** 词库文字来自开源项目[词光 · Word Atlas](https://github.com/designfuchen/word-atlas)（CC BY 4.0）。插件内置词库索引与分块（`data/`，约 7 MB），所以没有本机素材也能浏览全部词条；插画与发音优先从本机词光仓库读取，找不到时按需从[官方站点](https://0xlei.tech/words/)加载。
+**词库从哪里来。** 词库文字来自上游开源项目[词光 · Word Atlas](https://github.com/designfuchen/word-atlas)（CC BY 4.0）。插件内置词库索引与分块（`data/`，约 7 MB），所以没有本机素材也能浏览全部词条；插画与发音优先从本机词光仓库读取，找不到时按需从上游词光站点（`0xlei.tech`）加载。
 
 **需要知道的局限。** 释义、例句、插画与录音由生成式 AI 制作，并经过自动的结构与一致性校验，但**尚未逐条人工审校**，可能有个别释义、例句或发音错误；它不是官方雅思词表，也不承诺提分。发现错误欢迎[提交词条纠错](https://github.com/MC0571/DSH-Plugin-Word-Atlas/issues/new/choose)，附上词条 ID 即可。
 
@@ -137,22 +145,28 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 
 - 无需注册、无需账号，没有云端同步。
 - 学习进度保存在本机：`$DSH_HOME/word-atlas-dsh/progress.json`（浏览器里另有一份镜像）。
-- 只有播放发音、浏览插画时才请求素材，来源是本机词光仓库或官方站点。
-- 换设备或重装前，在「我的 → 数据与备份」导出备份，新设备导入即可；备份格式与线上版兼容。
+- 只有播放发音、浏览插画时才请求素材，来源是本机词光仓库或上游词光站点。
+- 换设备或重装前，在「我的 → 数据与备份」导出备份，新设备导入即可；备份格式与上游词光兼容。
 - 卸载插件不会自动删除进度文件；确认不再需要后，可手动删除上述目录。
 
 ## 常见问题
 
 <details>
+<summary><b>这个插件和词光原项目是什么关系？</b></summary>
+
+本仓库是社区维护的第三方 DSH 插件，不是词光官方仓库，与词光原作者无隶属关系。插件复用上游 [designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) 的 CC BY 4.0 词库、插画与录音，以及部分 MIT 代码，并做了 DSH 适配；插件自身的代码以 MIT 授权。
+</details>
+
+<details>
 <summary><b>装完侧边栏没有「词光」？</b></summary>
 
-先确认 `plugin_manager` 里安装成功。插件页面注册在 `main` 槽，侧边栏入口注册在 `sidebar.panellist`；仍未出现时，重启 Harness 或重新安装一次。
+先确认 DSH 的「插件」页里安装成功、没有报错。插件页面注册在 `main` 槽，侧边栏入口注册在 `sidebar.panellist`；仍未出现时，重启 Harness 或重新安装一次。
 </details>
 
 <details>
 <summary><b>插画或发音加载失败？</b></summary>
 
-默认从官方站点按需加载，网络受限时会失败。可以下载离线素材包，或把词光仓库克隆到本机后配置 `contentDir`（见[开发文档](docs/DEVELOPMENT.md)）。
+默认从上游词光站点按需加载，网络受限时会失败。可以下载离线素材包，或把词光仓库克隆到本机后配置 `contentDir`（见[开发文档](docs/DEVELOPMENT.md)）。
 </details>
 
 <details>
@@ -164,19 +178,13 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 <details>
 <summary><b>换电脑或重装会不会丢进度？</b></summary>
 
-进度只在本机，不会自动同步。换设备前在「我的 → 数据与备份」导出，之后导入即可。备份格式与词光线上版兼容。
+进度只在本机，不会自动同步。换设备前在「我的 → 数据与备份」导出，之后导入即可。备份格式与上游词光兼容。
 </details>
 
 <details>
 <summary><b>离线包要下多久？多大？</b></summary>
 
-三档共约 701 MB，取决于网速和官方站点速度；日常只背单词，下载缩略图（84 MB）就够了。下载支持取消与续传，已完成的文件不会重复下载。
-</details>
-
-<details>
-<summary><b>和词光线上版是什么关系？</b></summary>
-
-插件复刻的是同一套词库与学习流程，把词光搬进 Harness，并额外提供 Agent 工具和离线素材管理。线上版可能更新更快，插件会持续跟进；两边的进度备份格式兼容。
+三档共约 701 MB，取决于网速和上游站点速度；日常只背单词，下载缩略图（84 MB）就够了。下载支持取消与续传，已完成的文件不会重复下载。
 </details>
 
 ## 反馈与参与
@@ -191,10 +199,12 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 | :--- | :--- |
 | 插件代码 | [MIT](LICENSE) |
 | 词库文本、插画与词条录音 | [CC BY 4.0](THIRD_PARTY_NOTICES.md)，署名 Word Atlas contributors（词光） |
-| 书房短文与书籍内容 | 来自词光线上站点，CC BY 4.0；《The Little Prince》原文已进入公有领域 |
+| 书房短文与书籍内容 | 来自上游词光站点，CC BY 4.0；《The Little Prince》原文已进入公有领域 |
 | ts-fsrs / Lucide | 各自 MIT / ISC 许可 |
 
 词光原项目：[designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) · 本插件仓库：[MC0571/DSH-Plugin-Word-Atlas](https://github.com/MC0571/DSH-Plugin-Word-Atlas) · 更新记录：[CHANGELOG.md](CHANGELOG.md)
+
+> 本仓库为非官方第三方插件，与词光官方无隶属关系，不代表上游项目立场。
 
 ---
 
