@@ -1,10 +1,6 @@
 <div align="center">
 
-<img src="icon.svg" width="72" alt="词光 for DeepSeek Plugin">
-
-# 词光 for DeepSeek Plugin
-
-**在 DeepSeek Harness 里，把雅思单词变成画面。**
+# 词光 for DeepSeek Harness
 
 7,298 个雅思词 · 一词一画 · 英美发音 · FSRS 间隔复习 · 进度只留本机
 
@@ -17,15 +13,15 @@
 [![Code: MIT](https://img.shields.io/badge/Code-MIT-17283B?style=flat-square)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/Data-CC_BY_4.0-AD5038?style=flat-square)](THIRD_PARTY_NOTICES.md)
 
-<img src="docs/assets/screens/today.jpg" alt="词光插件运行在 DeepSeek Harness 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
+<img src="docs/assets/screens/today.jpg" alt="词光 for DeepSeek Harness 插件运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
 
-<sub>词光 for DeepSeek Plugin 运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页——学习计划、连续天数、本周统计与今日一词。</sub>
+<sub>词光 for DeepSeek Harness 运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页——学习计划、连续天数、本周统计与今日一词。</sub>
 
 </div>
 
 ---
 
-**词光 for DeepSeek Plugin** 是 DeepSeek Harness 的雅思词汇插件。点开侧边栏的「词光」，每个词都是一张插画词卡：
+**词光 for DeepSeek Harness** 是一套插画雅思词汇插件。点开侧边栏的「词光」，每个词都是一张插画词卡：
 先看画面理解词义，再听英音美音，然后做主动回忆练习，最后交给 FSRS 在快忘的时候提醒你复习。
 
 **免费开源、无需账号，学习进度只保存在你的电脑上。**
@@ -208,4 +204,4 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 
 ---
 
-由 [@MC0571](https://github.com/MC0571) 维护。词光产品本身的进展见 [X · @yangleiocx3](https://x.com/yangleiocx3)。
+由 [MC](https://x.com/marchen_cc) 维护。
