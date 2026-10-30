@@ -1,5 +1,3 @@
-<div align="center">
-
 # 词光 for DeepSeek Harness
 
 7,298 个雅思词 · 一词一画 · 英美发音 · FSRS 间隔复习 · 进度只留本机
@@ -16,8 +14,6 @@
 <img src="docs/assets/screens/today.jpg" alt="词光 for DeepSeek Harness 插件运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
 
 <sub>词光 for DeepSeek Harness 运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页——学习计划、连续天数、本周统计与今日一词。</sub>
-
-</div>
 
 ---
 
@@ -41,8 +37,9 @@
 
 3. 点「安装」，等进度完成。侧边栏出现「词光」图标后点开即可。
 
-<p align="center"><img src="docs/assets/screens/install.jpg" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装，左侧为 DSH 侧边栏" width="100%"></p>
-<p align="center"><sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。截图保留 DSH 侧边栏，用来说明安装环境。</sub></p>
+<img src="docs/assets/screens/install.jpg" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装，左侧为 DSH 侧边栏" width="100%">
+
+<sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。截图保留 DSH 侧边栏，用来说明安装环境。</sub>
 
 安装会请求 `danger-full-access` 或审批：插件需要写入自己的目录、进度文件和素材缓存（`$DSH_HOME/word-atlas-dsh/`）。装完后不再额外授权，也不会把学习数据上传到任何服务器。
 
@@ -204,4 +201,4 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 
 ---
 
-由 [MC](https://x.com/marchen_cc) 维护。
+本仓库由 [MC](https://x.com/marchen_cc) 维护。
