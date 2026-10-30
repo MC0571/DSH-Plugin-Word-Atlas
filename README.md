@@ -186,16 +186,7 @@ target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 - **改代码**：见[开发文档](docs/DEVELOPMENT.md)，提交前跑 `npm run check`。
 - 如果词光对你有用，欢迎 Star，或者转给正在备考的朋友。
 
-## 授权与来源
-
-| 范围 | 许可 |
-| :--- | :--- |
-| 插件代码 | [MIT](LICENSE) |
-| 词库文本、插画与词条录音 | [CC BY 4.0](THIRD_PARTY_NOTICES.md)，署名 Word Atlas contributors（词光） |
-| 书房短文与书籍内容 | 来自上游词光站点，CC BY 4.0；《The Little Prince》原文已进入公有领域 |
-| ts-fsrs / Lucide | 各自 MIT / ISC 许可 |
-
-词光原项目：[designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) · 本插件仓库：[MC0571/DSH-Plugin-Word-Atlas](https://github.com/MC0571/DSH-Plugin-Word-Atlas) · 更新记录：[CHANGELOG.md](CHANGELOG.md)
+词光原项目：[designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) · 本插件仓库：[MC0571/DSH-Plugin-Word-Atlas](https://github.com/MC0571/DSH-Plugin-Word-Atlas) · 更新记录：[CHANGELOG.md](CHANGELOG.md) · 授权与第三方内容：[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 > 本仓库为非官方第三方插件，与词光官方无隶属关系，不代表上游项目立场。
 

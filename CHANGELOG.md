@@ -15,6 +15,7 @@
   移入 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
 - 安装方式改为优先「在 DSH 界面里添加仓库地址」，`plugin_manager` 作为脚本/自动化备选。
 - 明确本仓库为社区维护的第三方插件、非词光官方仓库，移除引导到官网站点体验的入口。
+- 授权一览移入 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)，README 只保留入口链接。
 - 修正过期内容：移除已下线的分享卡说明与重复的路线图条目，补充 14,596 条例句、
   1,011 条第二条例句录音等数据；安装与 FAQ 改为用户视角。
 
