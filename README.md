@@ -1,182 +1,195 @@
-# 词光 · Word Atlas for DeepSeek Harness
+# 词光 for DeepSeek Harness
 
-[![CI](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/Code-MIT-17283B)](./LICENSE)
-[![Dataset: CC BY 4.0](https://img.shields.io/badge/Dataset-CC_BY_4.0-AD5038)](./THIRD_PARTY_NOTICES.md)
-[![Version](https://img.shields.io/github/v/tag/MC0571/DSH-Plugin-Word-Atlas?label=release)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/tags)
+7,298 个雅思词 · 一词一画 · 英美发音 · FSRS 间隔复习 · 进度只留本机
 
-把开源项目 [designfuchen/word-atlas](https://github.com/designfuchen/word-atlas)（词光 · Word Atlas）做成
-DeepSeek Harness 插件：在 Harness 侧边栏点「词光」，就能打开一张可以听、可以练、可以复习的雅思词汇图鉴。
+社区维护的第三方 DSH 插件 · 非词光官方仓库
 
-- **7,298** 个词条，19 个话题，CEFR A1–C2
-- 每词一幅插画、英美双发音、两条例句朗读
-- **FSRS** 间隔复习（Again / Hard / Good / Easy），进度保存在本机
-- 生词本、按 CEFR / 话题筛选、中英释义搜索
-- **学习会话**：intro 词卡 → 看义选词 / 看图补句 / 听音辨词 / 拼写四种题型，答错自动安排重练，会话可恢复
-- **例句点词查询**：例句里点任意英文词弹出释义浮窗，可播放发音或跳转词卡（对齐线上版）
-- **离线素材包**：缩略图 / 完整插画 / 发音分档下载，或从本机词光仓库导入；断网也能看图听音
-- **今日页**：品牌插画 Hero、每日计划、今日目标圆环、连续天数、本周统计、今日一词、A1–C2 路线、19 个话题入口
-- **练习**：单词 / 例句 / 听写三种打字模式，实时 WPM / 准确率
-- **星图**：WebGL2 词汇星系，拖拽旋转/缩放，学习状态亮度，点击打开词条
-- **分享与命令面板**：词条生成分享卡 PNG；⌘K 搜索词条与跳转页面
-- **书房**：今日阅读、732 篇分级短文（双语 + 生词内联查词 + T/F/NG 理解题）、
-  小王子沉浸式阅读（题图/三种阅读方式/字号行距/查词/逐句朗读/聆听模式/章节星路/续读）
-- **我的页**：统计条、20 周热力图、7 天复习预测、错词本、学习设置、备份导入/导出
-- **Agent 工具**：`word_atlas_lookup`（查词条）与 `word_atlas_search`（按释义/级别/话题搜词）
+[**安装插件**](#安装)　·　[功能一览](#功能一览)　·　[常见问题](#常见问题)　·　[开发文档](docs/DEVELOPMENT.md)
+
+[![Release](https://img.shields.io/github/v/tag/MC0571/DSH-Plugin-Word-Atlas?label=release&style=flat-square)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/tags)
+[![CI](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/MC0571/DSH-Plugin-Word-Atlas/actions/workflows/ci.yml)
+[![Code: MIT](https://img.shields.io/badge/Code-MIT-17283B?style=flat-square)](LICENSE)
+[![Data: CC BY 4.0](https://img.shields.io/badge/Data-CC_BY_4.0-AD5038?style=flat-square)](THIRD_PARTY_NOTICES.md)
+
+<img src="docs/assets/screens/today.jpg" alt="词光 for DeepSeek Harness 插件运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页" width="100%">
+
+<sub>词光 for DeepSeek Harness 运行在 DSH 桌面端：左侧是 DSH 侧边栏，右侧是今日页——学习计划、连续天数、本周统计与今日一词。</sub>
+
+---
+
+**词光 for DeepSeek Harness** 是一套插画雅思词汇插件。点开侧边栏的「词光」，每个词都是一张插画词卡：
+先看画面理解词义，再听英音美音，然后做主动回忆练习，最后交给 FSRS 在快忘的时候提醒你复习。
+
+**免费开源、无需账号，学习进度只保存在你的电脑上。**
+
+> 本仓库是社区维护的第三方插件，不是词光官方仓库，与词光原作者无隶属关系。词库、插画与发音来自上游开源项目[词光 · Word Atlas](https://github.com/designfuchen/word-atlas)（CC BY 4.0），插件代码以 MIT 授权。
 
 ## 安装
 
-在 DSH 里用 `plugin_manager` 安装（需要 danger-full-access 或审批）：
+**推荐：在 DSH 界面里手动添加。**
+
+1. 侧边栏打开「插件」，点右上角「**添加插件**」；
+2. 在输入框粘贴仓库地址：
+
+   ```text
+   https://github.com/MC0571/DSH-Plugin-Word-Atlas
+   ```
+
+3. 点「安装」，等进度完成。侧边栏出现「词光」图标后点开即可。
+
+<img src="docs/assets/screens/install.jpg" alt="在 DSH 插件页粘贴 GitHub 仓库地址后点击安装，左侧为 DSH 侧边栏" width="100%">
+
+<sub>「插件 → 添加插件」，粘贴仓库地址后点「安装」；网络慢时可切换安装源。截图保留 DSH 侧边栏，用来说明安装环境。</sub>
+
+安装会请求 `danger-full-access` 或审批：插件需要写入自己的目录、进度文件和素材缓存（`$DSH_HOME/word-atlas-dsh/`）。装完后不再额外授权，也不会把学习数据上传到任何服务器。
+
+**装完自检（约 30 秒）：**
+
+| 检查 | 应该看到 |
+| :--- | :--- |
+| 侧边栏 | 出现「词光」图标 |
+| 今日页 | 今日计划、连续天数，以及一张可以点的词卡 |
+| 词卡 | 插画、英美音标、中文释义，点播放能听到发音 |
+| 素材 | 联网时插画和发音按需加载，无需先下载 |
+
+<details>
+<summary><b>用 plugin_manager 安装（脚本 / 自动化）</b></summary>
 
 ```text
 action: install_bundle
 target: https://github.com/MC0571/DSH-Plugin-Word-Atlas.git
 ```
 
-本地开发时也可以直接安装链接目录：
+本地开发安装把 `target` 指向本仓库目录即可，见[开发文档](docs/DEVELOPMENT.md)。
+</details>
 
-```text
-action: install_bundle
-target: /path/to/DSH-Plugin-Word-Atlas
-```
+## 这是什么，适合谁
 
-安装后侧边栏出现「词光」图标；插件页面注册在 `main` 槽的 `word-atlas` key，
-侧边栏入口注册在 `sidebar.panellist`（order 22）。卸载用 `remove_bundle`，目标是 `word-atlas-dsh`。
+- **给谁**：备考雅思的中文母语学习者，每天能拿出 10–20 分钟，想先把「认词」这一步练扎实。
+- **解决什么**：背了就忘；词义和画面脱节；学英语时还要在 App、网页和笔记之间来回切换。
+- **怎么做到**：一词一画建立画面锚点 → 四种题型逼你主动回忆 → FSRS 只在快忘的时候安排复习。
+- **不适合谁**：需要真人批改作文、口语陪练，或者期待「一键提分」的人——这是词汇工具，不承诺分数。
 
-## 词库与素材来源
+做成插件的好处也很直接：不用离开 Harness 去开另一个 App；Agent 也能直接查同一份词库；学习记录留在本机，不注册、不同步。
 
-插件自带一份词库索引与词条分块（`data/`，约 7 MB，来自上游 CC BY 4.0 数据），
-因此**没有本机素材也能浏览全部词条**。插画与发音优先从本机词光仓库读取
-（`public/atlas/`）；找不到时 302 到官方站点 `https://0xlei.tech/words/`。
+## 学习闭环
 
-Host 半按以下顺序寻找本机素材：
+| 环节 | 你会做什么 |
+| :--- | :--- |
+| **看见** | 每个词一幅原创插画，配中英释义、两条例句，以及搭配、词族和用法提示。 |
+| **听见** | 英音、美音随时切换；例句有朗读，1,011 个重点词的第二条例句也配了录音。 |
+| **想起** | 看义选词、看图补句、听音辨词、拼写，四种题型交替出现；答错会重新排进本轮。 |
+| **复习** | FSRS 按答题记录排期，只有首次作答计入正确率；没有到期词时也能自由复习已学词。 |
+| **积累** | 星图按话题点亮学习状态，打字练习统计 WPM 与准确率，进度可导出备份。 |
 
-1. Config `contentDir`（相对路径按插件目录解析）
-2. 环境变量 `WORD_ATLAS_CONTENT_DIR`
-3. `<本插件目录>/../repo`（例如工作区的 `repo/` 克隆）
-4. `<本插件目录>/content`
+## 功能一览
 
-想获得完整离线体验，把 [词光仓库](https://github.com/designfuchen/word-atlas) 克隆到
-`../repo` 或配置 `contentDir` 即可。
+| 入口 | 能做什么 |
+| :--- | :--- |
+| **今日** | 每日计划、目标圆环、连续天数、本周统计、今日一词、A1–C2 学习路线、19 个话题入口。 |
+| **图鉴** | 7,298 个词，按 CEFR、话题和中文释义筛选搜索，每个词都能打开插画词卡。 |
+| **书房** | 732 篇分级短文（双语对照、点词查义、T/F/NG 理解题）和《小王子》沉浸式阅读（三种阅读方式、字号行距、逐句朗读、聆听模式、章节进度）。 |
+| **星图** | WebGL2 渲染的词汇星系，19 个话题成簇，按学习状态明暗；拖动旋转、滚轮缩放，点星开词卡。 |
+| **复习** | 到期词优先出题；重来 / 困难 / 良好 / 简单四档评分；也可以自由复习已学词。 |
+| **练习** | 单词、例句、听写三种打字模式，实时 WPM 与准确率，可从最近学过、错词、收藏或学习路线取词。 |
+| **生词本** | 收藏与错词集中管理，随时回看、集中攻破。 |
+| **我的** | 统计条、20 周热力图、7 天复习预测、目标记忆率、备份导入导出、离线素材下载。 |
 
-## 离线素材与点词查询
+> 两个顺手的小功能：例句里点任意英文词就能查义并播放发音；⌘K（Windows 为 Ctrl+K）打开命令面板，搜索词条或跳转页面。
 
-- 词库文字（7,298 条）已内置，无需下载；
-- 插画与发音默认从官方站点按需加载；在「我的 → 离线素材」可下载
-  **缩略图 84 MB / 完整插画 199 MB / 发音 418 MB**（共 37,501 个文件，约 701 MB），
-  下载中即可生效，支持取消、续传与删除；
-- 若检测到本机词光仓库（`contentDir`），可直接从本地导入，完全离线；
-- 例句中的英文词点击即查，浮窗可播放发音、打开词卡。
+## 内容与数据
 
-## Agent 工具
+| 资源 | 数量 |
+| :--- | :--- |
+| 词条 | **7,298** 条，CEFR A1–C2，19 个话题 |
+| 例句 | **14,596** 条，日常与雅思语境，附中文翻译 |
+| 插画 | **7,298** 幅，512 px WebP，另有网格用缩略图 |
+| 录音 | **22,905** 段：英音、美音、例句朗读（1,011 个重点词还有第二条例句录音） |
+| 书房 | **732** 篇分级短文 + 1 本《小王子》（章节 + 朗读音频） |
+
+**词库从哪里来。** 词库文字来自上游开源项目[词光 · Word Atlas](https://github.com/designfuchen/word-atlas)（CC BY 4.0）。插件内置词库索引与分块（`data/`，约 7 MB），所以没有本机素材也能浏览全部词条；插画与发音优先从本机词光仓库读取，找不到时按需从上游词光站点（`0xlei.tech`）加载。
+
+**需要知道的局限。** 释义、例句、插画与录音由生成式 AI 制作，并经过自动的结构与一致性校验，但**尚未逐条人工审校**，可能有个别释义、例句或发音错误；它不是官方雅思词表，也不承诺提分。发现错误欢迎[提交词条纠错](https://github.com/MC0571/DSH-Plugin-Word-Atlas/issues/new/choose)，附上词条 ID 即可。
+
+## 离线使用
+
+默认联网按需加载：打开一个词，才下载它的插画和发音。想在通勤、飞机上也能用，可以在「我的 → 离线素材」里按需下载：
+
+| 档位 | 大小 | 适合 |
+| :--- | ---: | :--- |
+| 缩略图 | 84 MB | 网格浏览、查词浮窗；只背单词的话够用 |
+| 完整插画 | 199 MB | 想离线看词卡大图 |
+| 发音 | 418 MB | 想离线听英音、美音和例句朗读 |
+
+三档全部下载约 701 MB（37,501 个文件），支持暂停、续传和删除，下载过程中已完成的素材立即可用。如果本机已经克隆了[词光仓库](https://github.com/designfuchen/word-atlas)，也可以直接从本地导入，完全离线。
+
+## 给 Agent 用
+
+装好插件后，Harness 里的模型也能查这份词库：
 
 | 工具 | 用途 |
-| --- | --- |
-| `word_atlas_lookup` | 按英文单词或词条 id 返回完整词条：英美音标、CEFR、话题、中英释义、例句、搭配、词族、近反义、提示与插画链接 |
-| `word_atlas_search` | 按英文单词 / 中文释义 / 音标搜索，可按 CEFR（A1–C2）与 19 个话题过滤 |
+| :--- | :--- |
+| `word_atlas_lookup` | 按单词或词条 ID 返回完整词条：英美音标、CEFR、话题、中英释义、例句、搭配、词族、提示与插画链接 |
+| `word_atlas_search` | 按英文、中文释义或音标搜索，可按 CEFR 与 19 个话题过滤 |
 
-工具只在 Host 存在 `tools` 服务时注册；`config.tools: false` 可关闭。
+比如让 Agent「用 word_atlas_lookup 查一下 principle，顺便给两个雅思例句」，它会直接返回结构化词条，不需要另开词典。不想让模型看到词库时，在配置里设 `tools: false` 即可（配置项见[开发文档](docs/DEVELOPMENT.md)）。
 
-## Config（`cordis.patch.yml`）
+## 隐私与数据
 
-```yaml
-- id: word-atlas
-  config:
-    contentDir: /path/to/word-atlas        # 可选，含 public/atlas/ 的仓库目录
-    mediaBase: https://0xlei.tech/words/   # 可选，官方素材根地址
-    stateFile: /path/to/progress.json      # 可选，默认 $DSH_HOME/word-atlas-dsh/progress.json
-    tools: true                            # 可选，false 时不注册 Agent 工具
-    offlineDir: /path/to/offline           # 可选，离线素材目录（默认 $DSH_HOME/word-atlas-dsh/content）
-    cacheDir: /path/to/cache               # 可选，按需缓存目录（默认 $DSH_HOME/word-atlas-dsh/cache）
-    autoCache: false                       # 可选，浏览时自动缓存媒体（默认 false）
-    cacheMaxBytes: 1073741824              # 可选，按需缓存上限（默认 1 GiB，超出按时间 LRU 清理）
-```
+- 无需注册、无需账号，没有云端同步。
+- 学习进度保存在本机：`$DSH_HOME/word-atlas-dsh/progress.json`（浏览器里另有一份镜像）。
+- 只有播放发音、浏览插画时才请求素材，来源是本机词光仓库或上游词光站点。
+- 换设备或重装前，在「我的 → 数据与备份」导出备份，新设备导入即可；备份格式与上游词光兼容。
+- 卸载插件不会自动删除进度文件；确认不再需要后，可手动删除上述目录。
 
-## HTTP 路由（同源，页面内使用）
+## 常见问题
 
-| 路由 | 说明 |
-| --- | --- |
-| `GET /word-atlas/health` | 运行状态：词库数量、素材来源、工具与进度文件路径 |
-| `GET /word-atlas/api/progress` | 读取 FSRS 复习进度 |
-| `POST /word-atlas/api/progress` | 保存复习进度（JSON，≤ 4 MB） |
-| `GET /word-atlas/atlas/index.json` | 浏览索引（510 KB） |
-| `GET /word-atlas/atlas/entries/<n>.json` | 词条分块（每块 100 条） |
-| `GET /word-atlas/atlas/thumb/<id>.webp` | 缩略插画 |
-| `GET /word-atlas/atlas/img/<id>.webp` | 完整插画 |
-| `GET /word-atlas/atlas/audio/<uk\|us\|ex\|ex2>/<id>.mp3` | 发音 / 例句朗读（支持 Range） |
+<details>
+<summary><b>这个插件和词光原项目是什么关系？</b></summary>
 
-## 版本与发布
+本仓库是社区维护的第三方 DSH 插件，不是词光官方仓库，与词光原作者无隶属关系。插件复用上游 [designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) 的 CC BY 4.0 词库、插画与录音，以及部分 MIT 代码，并做了 DSH 适配；插件自身的代码以 MIT 授权。
+</details>
 
-版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)，当前版本见 `package.json` 与
-[CHANGELOG.md](./CHANGELOG.md)。发布约定：
+<details>
+<summary><b>装完侧边栏没有「词光」？</b></summary>
 
-1. 修改 `package.json` 的 `version` 并更新 `CHANGELOG.md`；
-2. 提交后在 `main` 打 `v<version>` 标签（如 `v0.1.0`）并推送；
-3. 为该标签创建同名 GitHub Release；
-4. CI（`.github/workflows/ci.yml`）在每次 push / PR 上跑 `npm run check`。
+先确认 DSH 的「插件」页里安装成功、没有报错。插件页面注册在 `main` 槽，侧边栏入口注册在 `sidebar.panellist`；仍未出现时，重启 Harness 或重新安装一次。
+</details>
 
-词库内容同步自上游（CC BY 4.0），可用 `npm run sync-data` 从本机词光仓库重新生成 `data/`。
+<details>
+<summary><b>插画或发音加载失败？</b></summary>
 
-## 路线图
+默认从上游词光站点按需加载，网络受限时会失败。可以下载离线素材包，或把词光仓库克隆到本机后配置 `contentDir`（见[开发文档](docs/DEVELOPMENT.md)）。
+</details>
 
-开发计划用 GitHub Issues + Milestones 跟踪，按 SemVer 发布：
+<details>
+<summary><b>安装为什么需要 danger-full-access？</b></summary>
 
-- ✅ **v0.2.0** — 例句点词查询浮窗（#4）、离线素材包（#5）、设置页/备份导入（#6）
-- ✅ **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 统计/我的（#9）
-- ✅ **v0.3.1** — Learn 页 UI 一致性修复
-- ✅ **v0.3.2** — Today 学习首页改版（品牌素材 / Hero / 周统计 / 路线 / 话题）
-- ✅ **v0.3.3** — Desktop 窗口安全区 + Learn slim 顶部栏
-- ✅ **v0.3.4** — 修复宿主 `corner-shape` 导致的圆形控件变形
-- ✅ **v0.3.5** — 图标库统一为 Lucide
-- ✅ **v0.3.6** — 修复听音按钮图标未居中
-- ✅ **v0.4.0** — Practice 打字练习、Galaxy 词汇星图、分享卡与命令面板
-- ✅ **v0.4.1** — 打字练习忽略空格差异
-- ✅ **v0.4.2** — 移除打字练习的额外可见输入框
-- ✅ **v0.5.0** — 今日阅读与书房（短文/书架/阅读器/理解题）
-- ✅ **v0.5.1** — 沉浸式书籍阅读 + 逐句朗读 + 聆听模式 + 书架星路
-- ✅ **v0.5.2** — 聆听模式阅读方式切换、朗读语言跟随、安全区修复
-- ✅ **v0.5.3** — 修复播放时白屏（queue 初始化顺序）
-- ✅ **v0.5.4** — 点句朗读 / 查词模式分离、朗读加载反馈与防连点串位
-- ✅ **v0.5.5** — 查词按钮换行、查词卡直接收藏、全部词可查
-- ✅ **v0.5.6** — 详情卡头部整理（移除分享）+ 短文全部词可查
-- ✅ **v0.5.7** — 统一查词卡片样式 + 详情页收藏/关闭布局
-- ✅ **v0.5.8** — 复习页移除装饰图标与本机路径提示
-- ✅ **v0.6.0** — 复习改为主动回忆测验，统一首页/复习入口
-- ✅ **v0.6.1** — 拼写输入 IME/退格修复 + 居中与字格可读性
-- ✅ **v0.6.2** — 拼写改为原生可见输入框；移除退出叉号
-- ✅ **v0.6.3** — 拼写输入恢复逐字母分格（原生输入）
-- ✅ **v0.6.4** — 拼写输入改为逐格原生输入框并限制字数
-- ✅ **v0.6.5** — 复习会话排除介绍题，校验全部题型具备测试
-- ✅ **v0.6.6** — 复习页状态化引导 + 自由复习已学词
-- **v0.3.0** — Learn 学习会话（#7）、Today 今日页（#8）、Me 我的/统计（#9）
-- **v0.4.0** — Practice 打字练习（#10）、Galaxy 星图（#11）、分享卡/命令面板（#12）
-- 实现原则与复刻来源索引见 tracking issue #1：优先移植/复用上游 MIT 源码，
-  线上版构建产物仅作行为参考，不重复造轮子。
+这是 Harness 安装插件的方式：插件需要写入自己的目录、进度文件和素材缓存。装完后不再需要额外权限，插件也不会把学习数据上传到任何地方。
+</details>
 
-`main` 已开启分支保护：改动走 `feat/*` / `docs/*` 分支 + PR，CI `check` 通过后
-squash 合并并自动删除分支；发布时打 `vX.Y.Z` 标签并创建 GitHub Release。
+<details>
+<summary><b>换电脑或重装会不会丢进度？</b></summary>
 
-## 开发
+进度只在本机，不会自动同步。换设备前在「我的 → 数据与备份」导出，之后导入即可。备份格式与上游词光兼容。
+</details>
 
-```bash
-npm install          # esbuild + ts-fsrs + react/react-dom（仅构建/测试期）
-npm run build        # src/client/*.jsx -> client.js（CJS 包进 __ModuleLoader__）
-npm test             # 冒烟测试：客户端模块/视图渲染 + Host 路由 + 进度 + Agent 工具
-npm run check        # build + 语法检查 + smoke
-npm run sync-data    # 从 ../repo（或 WORD_ATLAS_CONTENT_DIR）同步内置词库
-```
+<details>
+<summary><b>离线包要下多久？多大？</b></summary>
 
-改 Host 代码（`index.js` / `tools.js`）后，在 profile 里重新安装本 bundle
-（`plugin_manager` remove_bundle → install_bundle）即可生效，无需重启 DSH：
-linked 包或已安装包会在下一次 profile 重组时替换模块。
+三档共约 701 MB，取决于网速和上游站点速度；日常只背单词，下载缩略图（84 MB）就够了。下载支持取消与续传，已完成的文件不会重复下载。
+</details>
 
-## 授权
+## 反馈与参与
 
-- 插件代码：[MIT](./LICENSE)
-- 词库文本、插画与录音：**CC BY 4.0**，署名 [Word Atlas contributors（词光）](./THIRD_PARTY_NOTICES.md)
-- `ts-fsrs`：MIT
-- 图标：Lucide（ISC License）
-- 书房短文/书籍章节：来自词光线上站点（Word Atlas contributors，CC BY 4.0）
+- **词条纠错、界面问题、使用建议**：直接提 [Issue](https://github.com/MC0571/DSH-Plugin-Word-Atlas/issues/new/choose)，词条类问题请附**词条 ID**。
+- **改代码**：见[开发文档](docs/DEVELOPMENT.md)，提交前跑 `npm run check`。
+- 如果词光对你有用，欢迎 Star，或者转给正在备考的朋友。
 
-词光原项目：<https://github.com/designfuchen/word-atlas>
-本插件仓库：<https://github.com/MC0571/DSH-Plugin-Word-Atlas>
+词光原项目：[designfuchen/word-atlas](https://github.com/designfuchen/word-atlas) · 本插件仓库：[MC0571/DSH-Plugin-Word-Atlas](https://github.com/MC0571/DSH-Plugin-Word-Atlas) · 更新记录：[CHANGELOG.md](CHANGELOG.md) · 授权与第三方内容：[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+
+> 本仓库为非官方第三方插件，与词光官方无隶属关系，不代表上游项目立场。
+
+---
+
+本仓库由 [MC](https://x.com/marchen_cc) 维护。

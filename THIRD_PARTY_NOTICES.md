@@ -1,9 +1,20 @@
 # 第三方内容与依赖
 
+本项目使用的第三方内容、依赖及其许可如下；插件自身代码以 MIT 授权（见 [LICENSE](LICENSE)）。
+
+## 许可一览
+
+| 范围 | 许可 |
+| :--- | :--- |
+| 插件代码 | MIT（见 [LICENSE](LICENSE)） |
+| 词库文本、插画与词条录音 | CC BY 4.0，署名 Word Atlas contributors（词光） |
+| 书房短文与书籍内容 | 来自上游词光站点，CC BY 4.0；《The Little Prince》原文已进入公有领域 |
+| ts-fsrs / Lucide | 各自 MIT / ISC 许可 |
+
 ## 词光 · Word Atlas 数据（CC BY 4.0）
 
 本插件内置的 `data/index.json`、`data/entries/*.json`，以及运行时从本机词光仓库
-（`public/atlas/`）或官方站点读取的插画、英音/美音与例句录音，均来自开放项目：
+（`public/atlas/`）或上游词光站点读取的插画、英音/美音与例句录音，均来自开放项目：
 
 - **词光 · Word Atlas** — <https://github.com/designfuchen/word-atlas>
 - 作者：Word Atlas contributors（[@designfuchen](https://github.com/designfuchen) 与贡献者）
@@ -16,7 +27,7 @@
 ## 书房内容（短文与书籍）
 
 `data/readings-index.json`、`data/books-index.json` 以及运行时通过 Host 路由代理的
-短文正文、书籍章节、封面与朗读音频，来自词光线上站点（<https://0xlei.tech/words/>），
+短文正文、书籍章节、封面与朗读音频，来自上游词光站点（<https://0xlei.tech/words/>），
 内容版权归 Word Atlas contributors 所有，遵循项目 CC BY 4.0 内容授权；本插件只做展示与学习记录，
 不重新分发书籍全文。`The Little Prince` 原文已进入公有领域。使用时请保留词光署名。
 
@@ -24,6 +35,11 @@
 会话与文本工具的一部分，移植自原项目的 MIT 代码（`src/pages/Practice.tsx`、
 `src/lib/typing.ts`、`src/galaxy/*`、`src/pages/Learn.tsx`、`src/store/session.ts` 等），
 已保留原始署名并做 DSH 适配。
+
+## README 截图（`docs/assets/screens/`）
+
+`docs/assets/screens/today.jpg` 与 `install.jpg` 是本插件在 DeepSeek Harness 中的界面截图，
+仅用于说明本插件；截图中的插画与封面素材来自上游词光（CC BY 4.0，署名同「词光 · Word Atlas 数据」一节）。
 
 ## 图标
 
