@@ -25,6 +25,11 @@
 `src/lib/typing.ts`、`src/galaxy/*`、`src/pages/Learn.tsx`、`src/store/session.ts` 等），
 已保留原始署名并做 DSH 适配。
 
+## README 图片（`docs/assets/`）
+
+`docs/assets/hero.jpg` 与 `docs/assets/words/*.webp` 使用上游词光插画（CC BY 4.0，署名同
+「词光 · Word Atlas 数据」一节）；横幅由插件图标与这些插画合成，仅用于本仓库的说明文档。
+
 ## 图标
 
 - **Lucide**（`lucide-static` v1.63.0）— ISC License — <https://lucide.dev>
