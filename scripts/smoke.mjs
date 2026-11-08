@@ -236,6 +236,21 @@ assert.equal(advanced.session.index, 1)
 assert.equal(sessionApi.sessionStats({ ...builtSession, graded: { library: 3, study: 1 } }).accuracy, 50)
 assert.ok(sessionApi.todayPlan(fixtureAtlas, fixtureProgress, fixtureProgress.settings).fresh.length > 0)
 
+/* startLevel 必须真的跳过更简单的级别（0=A1 … 5=C2） */
+const b2Settings = { ...fixtureProgress.settings, startLevel: 3, dailyNew: 2 }
+const b2Plan = sessionApi.todayPlan(fixtureAtlas, { ...fixtureProgress, settings: b2Settings }, b2Settings)
+assert.equal(b2Plan.fresh.length, 2)
+assert.ok(
+  b2Plan.fresh.every((id) => fixtureAtlas.cefr.indexOf(fixtureAtlas.byId.get(id).cefr) >= 3),
+  `startLevel=3 must skip easier levels, got ${b2Plan.fresh.join(',')}`,
+)
+const b1Settings = { ...fixtureProgress.settings, startLevel: 2, dailyNew: 1 }
+const b1Plan = sessionApi.todayPlan(fixtureAtlas, { ...fixtureProgress, settings: b1Settings }, b1Settings)
+assert.ok(
+  fixtureAtlas.cefr.indexOf(fixtureAtlas.byId.get(b1Plan.fresh[0]).cefr) >= 2,
+  `startLevel=2 must skip A1/A2, got ${b1Plan.fresh.join(',')}`,
+)
+
 html = render(
   React.createElement(testSurface.Learn, {
     atlas: fixtureAtlas,
