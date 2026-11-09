@@ -258,11 +258,12 @@ const rankFixture = { cefr: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] }
 assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'A1' }), 0)
 assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'B2' }), 3)
 assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'B2', cefrRank: 3 }), 3)
+assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'B1', cefrRank: 99 }), 2)
 assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'Z9' }), -1)
 assert.equal(dataApi.cefrRankOf(rankFixture, null), -1)
 assert.equal(dataApi.cefrRankOf(undefined, { cefr: 'B1' }), -1)
 
-/* normalizeIndex 写入的 cefrRank 必须与 atlas.cefr 的字符串位次一致（真实数据 7298 行均为整数索引） */
+/* normalizeIndex 写入的 cefrRank 必须与 atlas.cefr 的字符串位次一致；缺失/非法索引回退为 -1 */
 const rankIndexPayload = {
   cefr: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
   topics: [['education', '教育']],
@@ -270,6 +271,9 @@ const rankIndexPayload = {
     ['rank-a1', 'rank-a1', 'n. A1', '/reɪŋk/', 0, 0, 31],
     ['rank-b2', 'rank-b2', 'n. B2', '/reɪŋk/', 3, 0, 31],
     ['rank-c2', 'rank-c2', 'n. C2', '/reɪŋk/', 5, 0, 31],
+    ['rank-missing', 'rank-missing', 'n. unknown', '/reɪŋk/', undefined, 0, 31],
+    ['rank-string', 'rank-string', 'n. B1', '/reɪŋk/', '2', 0, 31],
+    ['rank-oob', 'rank-oob', 'n. unknown', '/reɪŋk/', 9, 0, 31],
   ],
 }
 const realFetch = globalThis.fetch
@@ -281,6 +285,13 @@ try {
     assert.equal(word.cefrRank, rankAtlas.cefr.indexOf(word.cefr), `${id} cefrRank must match its CEFR string`)
     assert.equal(dataApi.cefrRankOf(rankAtlas, word), word.cefrRank)
   }
+  assert.equal(rankAtlas.byId.get('rank-missing').cefrRank, -1)
+  assert.equal(dataApi.cefrRankOf(rankAtlas, rankAtlas.byId.get('rank-missing')), -1)
+  assert.equal(rankAtlas.byId.get('rank-string').cefr, 'B1')
+  assert.equal(rankAtlas.byId.get('rank-string').cefrRank, 2)
+  assert.equal(dataApi.cefrRankOf(rankAtlas, rankAtlas.byId.get('rank-string')), 2)
+  assert.equal(rankAtlas.byId.get('rank-oob').cefrRank, -1)
+  assert.equal(dataApi.cefrRankOf(rankAtlas, rankAtlas.byId.get('rank-oob')), -1)
 } finally {
   globalThis.fetch = realFetch
 }
