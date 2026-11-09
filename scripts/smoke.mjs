@@ -13,6 +13,8 @@ import { readFileSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import * as dataApi from '../src/client/data.js'
+import { hashSeed } from '../src/client/lookup.js'
 
 const require = createRequire(import.meta.url)
 const here = dirname(fileURLToPath(import.meta.url))
@@ -250,6 +252,142 @@ assert.ok(
   fixtureAtlas.cefr.indexOf(fixtureAtlas.byId.get(b1Plan.fresh[0]).cefr) >= 2,
   `startLevel=2 must skip A1/A2, got ${b1Plan.fresh.join(',')}`,
 )
+
+/* cefrRankOf：标准词库位次、旧 fixture 的字符串回退与异常输入必须一致（0=A1 … 5=C2，未知=-1） */
+const rankFixture = { cefr: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] }
+assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'A1' }), 0)
+assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'B2' }), 3)
+assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'B2', cefrRank: 3 }), 3)
+assert.equal(dataApi.cefrRankOf(rankFixture, { cefr: 'Z9' }), -1)
+assert.equal(dataApi.cefrRankOf(rankFixture, null), -1)
+assert.equal(dataApi.cefrRankOf(undefined, { cefr: 'B1' }), -1)
+
+/* normalizeIndex 写入的 cefrRank 必须与 atlas.cefr 的字符串位次一致（真实数据 7298 行均为整数索引） */
+const rankIndexPayload = {
+  cefr: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+  topics: [['education', '教育']],
+  words: [
+    ['rank-a1', 'rank-a1', 'n. A1', '/reɪŋk/', 0, 0, 31],
+    ['rank-b2', 'rank-b2', 'n. B2', '/reɪŋk/', 3, 0, 31],
+    ['rank-c2', 'rank-c2', 'n. C2', '/reɪŋk/', 5, 0, 31],
+  ],
+}
+const realFetch = globalThis.fetch
+try {
+  globalThis.fetch = async () => ({ ok: true, json: async () => rankIndexPayload })
+  const rankAtlas = await dataApi.loadAtlas()
+  for (const id of ['rank-a1', 'rank-b2', 'rank-c2']) {
+    const word = rankAtlas.byId.get(id)
+    assert.equal(word.cefrRank, rankAtlas.cefr.indexOf(word.cefr), `${id} cefrRank must match its CEFR string`)
+    assert.equal(dataApi.cefrRankOf(rankAtlas, word), word.cefrRank)
+  }
+} finally {
+  globalThis.fetch = realFetch
+}
+
+/* Practice 学习路线：默认 startLevel=0 与 B1 起点都必须有词；高起点无词时为空 */
+const practiceWords = [
+  { id: 'practice-a1', word: 'practice-a1', zh: 'n. A1', ipa: '/a/', cefr: 'A1', topic: 'education', topicZh: '教育', media: 31, order: 0 },
+  { id: 'practice-b1', word: 'practice-b1', zh: 'n. B1', ipa: '/b/', cefr: 'B1', topic: 'education', topicZh: '教育', media: 31, order: 1 },
+  { id: 'practice-b2', word: 'practice-b2', zh: 'n. B2', ipa: '/c/', cefr: 'B2', topic: 'education', topicZh: '教育', media: 31, order: 2 },
+]
+const practiceAtlas = {
+  ...fixtureAtlas,
+  words: practiceWords,
+  byId: new Map(practiceWords.map((word) => [word.id, word])),
+  count: practiceWords.length,
+}
+for (const startLevel of [0, 2]) {
+  const practiceHtml = render(
+    React.createElement(testSurface.Practice, {
+      atlas: practiceAtlas,
+      progress: { ...fixtureProgress, settings: { ...fixtureProgress.settings, startLevel } },
+    }),
+    `Practice path startLevel=${startLevel}`,
+  )
+  assert.ok(
+    practiceHtml.includes('从学习路线的前 400 个词里随机抽 10 个。'),
+    `Practice path must keep words for startLevel=${startLevel}`,
+  )
+  assert.ok(!/wa-practice-start"[^>]*disabled/.test(practiceHtml), `Practice start must be enabled for startLevel=${startLevel}`)
+}
+const practiceEmptyHtml = render(
+  React.createElement(testSurface.Practice, {
+    atlas: practiceAtlas,
+    progress: { ...fixtureProgress, settings: { ...fixtureProgress.settings, startLevel: 5 } },
+  }),
+  'Practice path startLevel=5',
+)
+assert.ok(
+  practiceEmptyHtml.includes('这里还没有词，先去学几个，或换个来源。'),
+  'Practice path must be empty when no word reaches startLevel=5',
+)
+assert.ok(/wa-practice-start"[^>]*disabled/.test(practiceEmptyHtml), 'Practice start must be disabled for startLevel=5')
+
+/* Today「今日一词」：只从 media&1 且 B1+ 的池中选取，旧实现会退回完整词库 */
+const wotdDayKey = (() => {
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+})()
+const wotdFillers = Array.from({ length: 5 }, (_, index) => ({
+  id: `wotd-filler-${index}`,
+  word: `wotd-filler-${index}`,
+  zh: `n. filler ${index}`,
+  ipa: '/f/',
+  cefr: 'A1',
+  topic: 'education',
+  topicZh: '教育',
+  media: 0,
+  order: index + 1,
+}))
+const wotdTarget = {
+  id: 'wotd-target',
+  word: 'wotd-target',
+  zh: 'n. target',
+  ipa: '/t/',
+  cefr: 'B1',
+  topic: 'education',
+  topicZh: '教育',
+  media: 1,
+  order: 0,
+}
+const wotdWords = [...wotdFillers]
+wotdWords.splice(hashSeed(wotdDayKey) % (wotdFillers.length + 1) === 0 ? 1 : 0, 0, wotdTarget)
+const wotdAtlas = {
+  ...fixtureAtlas,
+  words: wotdWords,
+  byId: new Map(wotdWords.map((word) => [word.id, word])),
+  count: wotdWords.length,
+}
+const todayHtml = render(
+  React.createElement(testSurface.Today, {
+    atlas: wotdAtlas,
+    progress: fixtureProgress,
+    onStart() {},
+    onOpenWord() {},
+    onOpenLevel() {},
+    onOpenTopic() {},
+  }),
+  'Today word of the day',
+)
+const wotdMatch = todayHtml.match(/<p class="wa-wotd-word" lang="en">([^<]+)<\/p>/)
+assert.ok(wotdMatch, 'Today must render a word of the day')
+assert.equal(wotdMatch[1], wotdTarget.word, 'word of the day must come from the B1+ pool')
+
+/* 既有产品策略：高起点可选词不足时 nextNew 仍回落到 pass(0) 补满 dailyNew，PR 不应改变 */
+const fallbackWords = [
+  { id: 'fallback-a1', word: 'fallback-a1', zh: 'n. A1', ipa: '/a/', cefr: 'A1', topic: 'education', topicZh: '教育', media: 31, order: 0 },
+  { id: 'fallback-b2', word: 'fallback-b2', zh: 'n. B2', ipa: '/b/', cefr: 'B2', topic: 'education', topicZh: '教育', media: 31, order: 1 },
+]
+const fallbackAtlas = {
+  ...fixtureAtlas,
+  words: fallbackWords,
+  byId: new Map(fallbackWords.map((word) => [word.id, word])),
+  count: fallbackWords.length,
+}
+const fallbackSettings = { ...fixtureProgress.settings, startLevel: 3, dailyNew: 2 }
+const fallbackPlan = sessionApi.todayPlan(fallbackAtlas, { ...fixtureProgress, settings: fallbackSettings }, fallbackSettings)
+assert.deepEqual(fallbackPlan.fresh, ['fallback-b2', 'fallback-a1'], 'nextNew must keep the existing pass(0) fallback policy')
 
 html = render(
   React.createElement(testSurface.Learn, {
