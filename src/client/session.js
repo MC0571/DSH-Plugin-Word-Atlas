@@ -4,7 +4,7 @@
  * 逻辑移植自上游词光开源仓库 src/store/session.ts（MIT，Word Atlas contributors），
  * 改为纯函数以便宿主 store / 测试直接调用。
  */
-import { MEDIA } from './data.js'
+import { cefrRankOf, MEDIA } from './data.js'
 import { Rating, isMastered, review } from './fsrs.js'
 import { hashSeed, normalize, shuffle } from './lookup.js'
 
@@ -42,7 +42,7 @@ export function nextNew(atlas, progress, settings, count) {
   const pass = (from) => {
     for (const word of atlas.words) {
       if (out.length >= count) return
-      if (word.cefr < from || progress.cards[word.id] || out.includes(word.id)) continue
+      if (cefrRankOf(atlas, word) < from || progress.cards[word.id] || out.includes(word.id)) continue
       out.push(word.id)
     }
   }

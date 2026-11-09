@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { audioUrl, brandUrl, hasMedia, loadEntry, MEDIA } from './data.js'
+import { audioUrl, brandUrl, cefrRankOf, hasMedia, loadEntry, MEDIA } from './data.js'
 import { isMastered } from './fsrs.js'
 import { hashSeed } from './lookup.js'
 import { dayKey, newToday, todayPlan } from './session.js'
@@ -88,7 +88,7 @@ export function Today({ atlas, progress, onStart, onOpenWord, onOpenLevel, onOpe
 
   const teaser = (active ? active.newIds : plan.fresh).slice(0, 5).map((id) => atlas.byId.get(id)).filter(Boolean)
   const wotd = useMemo(() => {
-    const pool = atlas.words.filter((word) => (word.media & 1) && word.cefr >= 2)
+    const pool = atlas.words.filter((word) => (word.media & 1) && cefrRankOf(atlas, word) >= 2)
     const list = pool.length ? pool : atlas.words
     return list[hashSeed(dayKey()) % list.length]
   }, [atlas])

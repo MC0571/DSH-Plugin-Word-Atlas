@@ -23,6 +23,7 @@ function normalizeIndex(raw) {
       zh,
       ipa,
       cefr: cefr[cefrIndex] || '',
+      cefrRank: Number.isInteger(cefrIndex) ? cefrIndex : 0,
       topic: topics[topicIndex]?.slug || '',
       topicZh: topics[topicIndex]?.zh || '',
       media,
@@ -88,6 +89,18 @@ export const brandUrl = (name) => `/word-atlas/brand/${name}`
 export const thumbUrl = (id) => `${BASE}/thumb/${id}.webp`
 export const imgUrl = (id) => `${BASE}/img/${id}.webp`
 export const audioUrl = (kind, id) => `${BASE}/audio/${kind}/${id}.mp3`
+
+/**
+ * CEFR 位次（0=A1 … 5=C2）。
+ * `word.cefr` 是给界面看的字符串，`settings.startLevel` 是索引，
+ * 两者直接比大小会得到 NaN 比较（恒 false），所以所有难度比较都走这里。
+ */
+export function cefrRankOf(atlas, ref) {
+  if (!ref) return -1
+  if (Number.isInteger(ref.cefrRank)) return ref.cefrRank
+  const list = atlas?.cefr
+  return Array.isArray(list) ? list.indexOf(ref.cefr) : -1
+}
 
 export function mediaOf(ref) {
   return (ref && (typeof ref.media === 'number' ? ref.media : ref.m)) || 0

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { audioUrl, brandUrl, hasMedia, loadEntry, MEDIA } from './data.js'
+import { audioUrl, brandUrl, cefrRankOf, hasMedia, loadEntry, MEDIA } from './data.js'
 import { hashSeed, shuffle } from './lookup.js'
 import { update } from './store.js'
 import { clean, compact, correctCharacterCount, same, typingDelta, typingMetrics } from './typing.js'
@@ -35,7 +35,10 @@ export function Practice({ atlas, progress }) {
           ? progress.mistakes
           : source === 'saved'
             ? progress.bookmarks
-            : atlas.words.filter((word) => word.cefr >= progress.settings.startLevel).slice(0, 400).map((word) => word.id)
+            : atlas.words
+                .filter((word) => cefrRankOf(atlas, word) >= progress.settings.startLevel)
+                .slice(0, 400)
+                .map((word) => word.id)
     return ids.filter((id) => atlas.byId.has(id))
   }, [atlas, progress.cards, progress.mistakes, progress.bookmarks, progress.settings.startLevel, source])
 
