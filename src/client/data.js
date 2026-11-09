@@ -17,13 +17,14 @@ function normalizeIndex(raw) {
   const cefr = raw.cefr || ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
   const words = (raw.words || []).map((row, order) => {
     const [id, word, zh, ipa, cefrIndex, topicIndex, media] = row
+    const level = cefr[cefrIndex] || ''
     return {
       id,
       word,
       zh,
       ipa,
-      cefr: cefr[cefrIndex] || '',
-      cefrRank: Number.isInteger(cefrIndex) ? cefrIndex : 0,
+      cefr: level,
+      cefrRank: cefr.indexOf(level),
       topic: topics[topicIndex]?.slug || '',
       topicZh: topics[topicIndex]?.zh || '',
       media,
@@ -97,8 +98,10 @@ export const audioUrl = (kind, id) => `${BASE}/audio/${kind}/${id}.mp3`
  */
 export function cefrRankOf(atlas, ref) {
   if (!ref) return -1
-  if (Number.isInteger(ref.cefrRank)) return ref.cefrRank
   const list = atlas?.cefr
+  if (Number.isInteger(ref.cefrRank) && (!Array.isArray(list) || (ref.cefrRank >= 0 && ref.cefrRank < list.length))) {
+    return ref.cefrRank
+  }
   return Array.isArray(list) ? list.indexOf(ref.cefr) : -1
 }
 
